@@ -18,3 +18,4 @@ include_directories(strmbase)
 
 glob_sources(strmbase)
 add_library(strmbase STATIC ${Sources})
+set_property (TARGET strmbase APPEND PROPERTY COMPILE_DEFINITIONS UNICODE _UNICODE)
