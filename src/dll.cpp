@@ -87,56 +87,66 @@ CFactoryTemplate g_Templates[] =
 
 int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);
 
-STDAPI RegisterFilters( BOOL bRegister )
+STDAPI RegisterFilter(BOOL p_register, const GUID *p_clsid_category, const AMOVIESETUP_FILTER *p_filter, LPCWSTR p_filename)
 {
-    HRESULT hr = NOERROR;
-    WCHAR achFileName[MAX_PATH];
-    char achTemp[MAX_PATH];
+	com_safe_ptr_t<IFilterMapper2>	f_mapper = nullptr;
+    HRESULT f_result = CoCreateInstance(CLSID_FilterMapper2, NULL, CLSCTX_INPROC_SERVER, IID_IFilterMapper2, reinterpret_cast<void **>(&f_mapper));
+
+	if (p_register)
+    {
+		if (SUCCEEDED(f_result))
+		{
+			f_result = AMovieSetupRegisterServer(*p_filter->clsID, p_filter->strName, p_filename, L"Both", L"InprocServer32");
+		}
+
+		if (SUCCEEDED(f_result))
+		{
+			IMoniker *pMoniker = nullptr;
+			REGFILTER2 f_rf2;
+			f_rf2.dwVersion	= 1;
+			f_rf2.dwMerit	= MERIT_DO_NOT_USE;
+			f_rf2.cPins		= p_filter->nPins;
+			f_rf2.rgPins	= p_filter->lpPin;
+
+			f_result = f_mapper->RegisterFilter(*p_filter->clsID, p_filter->strName, &pMoniker, p_clsid_category, NULL, &f_rf2);
+		}
+	}
+	else
+	{
+		if (SUCCEEDED(f_result))
+		{
+			f_result = f_mapper->UnregisterFilter(p_clsid_category, 0, *p_filter->clsID);
+        }
+
+		if (SUCCEEDED(f_result))
+		{
+			f_result = AMovieSetupUnregisterServer (*p_filter->clsID);
+		}
+	}
+
+	return f_result;
+}
+
+STDAPI RegisterFilters(BOOL bRegister)
+{
     ASSERT(g_hInst != nullptr);
 
-    if( 0 == GetModuleFileNameA(g_hInst, achTemp, sizeof(achTemp))) 
+    HRESULT f_result = NOERROR;
+    WCHAR   f_module_filename[MAX_PATH] = L"";
+
+	if (GetModuleFileName(g_hInst, f_module_filename, MAX_PATH) == 0)
         return AmHresultFromWin32(GetLastError());
-
-    MultiByteToWideChar(CP_ACP, 0L, achTemp, lstrlenA(achTemp) + 1, 
-                       achFileName, NUMELMS(achFileName));
   
-    hr = CoInitialize(0);
+    f_result = CoInitialize(0);
 
-    if (bRegister)
-    {
-        hr = AMovieSetupRegisterServer(CLSID_KinectWebCam, FILTER_NAME_KINECT_WEBCAM, achFileName, L"Both", L"InprocServer32");
-    }
-
-    if (SUCCEEDED(hr))
-    {
-		com_safe_ptr_t<IFilterMapper2>	fm = nullptr;
-
-		hr = CoCreateInstance(CLSID_FilterMapper2, NULL, CLSCTX_INPROC_SERVER, IID_IFilterMapper2, reinterpret_cast<void **>(&fm));
-
-        if (SUCCEEDED(hr) && bRegister)
-        {
-			IMoniker *pMoniker = nullptr;
-			REGFILTER2 rf2;
-			rf2.dwVersion	= 1;
-			rf2.dwMerit		= MERIT_DO_NOT_USE;
-			rf2.cPins		= sizeof(AMSPinKCam) / sizeof(AMOVIESETUP_PIN);
-			rf2.rgPins		= &AMSPinKCam;
-
-			hr = fm->RegisterFilter(CLSID_KinectWebCam, FILTER_NAME_KINECT_WEBCAM, &pMoniker, &CLSID_VideoInputDeviceCategory, NULL, &rf2);
-        }
-
-        if (SUCCEEDED(hr) && !bRegister)
-        {
-			hr = fm->UnregisterFilter(&CLSID_VideoInputDeviceCategory, 0, CLSID_KinectWebCam);
-        }
-    }
-
-    if( SUCCEEDED(hr) && !bRegister)
-        hr = AMovieSetupUnregisterServer( CLSID_KinectWebCam );
+	if (SUCCEEDED(f_result))
+	{
+		f_result = RegisterFilter(bRegister, &CLSID_VideoInputDeviceCategory, &AMSFilterKCam, f_module_filename);
+	}
 
     CoFreeUnusedLibraries();
     CoUninitialize();
-    return hr;
+    return f_result;
 }
 
 STDAPI DllRegisterServer()
