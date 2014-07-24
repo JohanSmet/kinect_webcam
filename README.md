@@ -9,7 +9,7 @@ Features
 - tested with: - Flash on Firefox, Chrome, and WaterFox (64-bit)
                - GraphStudioNext (32-bit and 64-bit)
 	       - Yahoo Messenger (yes, really)
-- Kinect v2 requires Windows 8.1+, original Kinect should work on older
+- Kinect v2 requires Windows 8+, original Kinect should work on older
   OS-versions (not tested yet).
 
 Missing features (for now)
