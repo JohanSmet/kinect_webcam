@@ -31,7 +31,7 @@ endif()
 set (KINECT_V1_ROOT "${KINECT_SDK_ROOT}/v1.8")
 set (KINECT_V1_INC  "${KINECT_V1_ROOT}/inc")
 
-set (KINECT_V2_ROOT "${KINECT_SDK_ROOT}/v2.0-DevPreview1406")
+set (KINECT_V2_ROOT "${KINECT_SDK_ROOT}/v2.0-PublicPreview1407")
 set (KINECT_V2_INC  "${KINECT_V2_ROOT}/inc")
 
 if (${ARCH_64BIT})
