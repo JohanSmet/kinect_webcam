@@ -14,7 +14,6 @@ Features
 
 Missing features (for now)
 ==========================
-- microphone/audio support
 - Head/Body tracking
 - 'green screen' support
 - customizable settings and a nice UI to change these
