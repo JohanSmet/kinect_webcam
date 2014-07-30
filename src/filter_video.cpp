@@ -38,6 +38,28 @@ inline GUID MediaSubTypeFromPixelSize(int p_pixel_size)
 	}
 }
 
+inline device::Point2D smooth_focus_update(device::Point2D p_focus)
+{
+	static const int		MAX_SMOOTH_POINTS = 30;
+	static device::Point2D	f_points[MAX_SMOOTH_POINTS] = {0};
+	static int				f_index = 0;
+	static int				f_count = 0;
+
+	f_points[f_index] = p_focus;
+	f_index			  = (f_index + 1) % MAX_SMOOTH_POINTS;
+	f_count			  = min(f_count + 1, MAX_SMOOTH_POINTS);
+
+	device::Point2D	f_result = f_points[0];
+
+	for (int f_i = 1; f_i < MAX_SMOOTH_POINTS; ++f_i)
+	{
+		f_result.m_x += f_points[f_i].m_x;
+		f_result.m_y += f_points[f_i].m_y;
+	}
+
+	return {f_result.m_x / f_count, f_result.m_y / f_count};
+}
+
 //////////////////////////////////////////////////////////////////////////
 //  CKCam is the source filter which masquerades as a capture device
 //////////////////////////////////////////////////////////////////////////
@@ -101,7 +123,15 @@ CKCamStream::CKCamStream(HRESULT *phr, CKCam *pParent, LPCWSTR pPinName) :
 	}
 
 	// store the default media type
-    GetMediaType(m_device->video_resolution_preferred() + 1, &m_mt);	// GetMediaType is 1 based
+	if (m_device)
+	{
+		GetMediaType(m_device->video_resolution_preferred() + 1, &m_mt);	// GetMediaType is 1 based
+	}
+
+	// initialize the camera focus in the center of the camera
+	auto f_native_res = m_device->video_resolution(m_device->video_resolution_native());
+	m_focus.m_x = f_native_res.m_width / 2;
+	m_focus.m_y = f_native_res.m_height / 2;
 }
 
 CKCamStream::~CKCamStream()
@@ -184,13 +214,18 @@ HRESULT CKCamStream::FillBuffer(IMediaSample *pms)
 
 	// let the device update itself
 	m_device->update();
+
+	if (m_device->focus_availabe())
+	{
+		m_focus = smooth_focus_update(m_device->focus_point());
+	}
 	
 	// copy the data to the output buffer
     BYTE *pData;
     pms->GetPointer(&pData);
 
 	auto *f_pvi = reinterpret_cast<VIDEOINFOHEADER *> (m_mt.Format());
-	m_device->color_data(f_pvi->bmiHeader.biWidth, f_pvi->bmiHeader.biHeight, f_pvi->bmiHeader.biBitCount, pData);
+	m_device->color_data(m_focus.m_x, m_focus.m_y, f_pvi->bmiHeader.biWidth, f_pvi->bmiHeader.biHeight, f_pvi->bmiHeader.biBitCount, pData);
 
 	++m_num_frames;
     return S_OK;

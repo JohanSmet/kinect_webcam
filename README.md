@@ -5,6 +5,7 @@ A DirectShow capture filter that a Kinect v2 into a webcam.
 Features
 ========
 - supports the Kinect v2 and the original Kinect
+- rudimentary head-tracking on Kinect v2
 - 32bit and 64bit support
 - tested with: - Flash on Firefox, Chrome, and WaterFox (64-bit)
                - GraphStudioNext (32-bit and 64-bit)
@@ -14,7 +15,7 @@ Features
 
 Missing features (for now)
 ==========================
-- Head/Body tracking
+- Head/Body tracking (on Kinect V1)
 - 'green screen' support
 - customizable settings and a nice UI to change these
 
@@ -53,6 +54,8 @@ Maintainer : Johan Smet <johan.smet@justcode.be>
 
 Version History
 ===============
+2014-07-30
+- rudimentary head tracking (only on Kinect V2 for now)
 2014-07-21
 - initial release to github
 

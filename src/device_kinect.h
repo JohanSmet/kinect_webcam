@@ -45,13 +45,18 @@ class DeviceKinect : public Device
 		// resolutions
 		virtual int						video_resolution_count();
 		virtual int						video_resolution_preferred();
+		virtual int						video_resolution_native();
 		virtual DeviceVideoResolution	video_resolution(int p_index);
+
+		// body tracking
+		virtual bool				  focus_availabe();
+		virtual Point2D				  focus_point();
 
 		// update
 		virtual bool update();
 
 		// access to image data
-		virtual bool color_data(int p_width, int p_height, int p_bpp, unsigned char *p_data);
+		virtual bool color_data(int p_hor_focus, int p_ver_focus, int p_width, int p_height, int p_bpp, unsigned char *p_data);
 
 	// helper function
 	private :

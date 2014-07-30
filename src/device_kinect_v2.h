@@ -27,6 +27,8 @@
 // class
 //
 
+struct IMultiSourceFrame;
+
 namespace device {
 
 class DeviceKinectV2 : public Device
@@ -44,17 +46,25 @@ class DeviceKinectV2 : public Device
 		// resolutions
 		virtual int						video_resolution_count();
 		virtual int						video_resolution_preferred();
+		virtual int						video_resolution_native();
 		virtual DeviceVideoResolution	video_resolution(int p_index);
+
+		// body tracking
+		virtual bool				  focus_availabe();
+		virtual Point2D				  focus_point();
 
 		// update
 		virtual bool update();
 
 		// access to image data
-		virtual bool color_data(int p_width, int p_height, int p_bpp, unsigned char *p_data);
+		virtual bool color_data(int p_hor_focus, int p_ver_focus, int p_width, int p_height, int p_bpp, unsigned char *p_data);
 
 	// helper function
 	private :
 		bool read_color_frame();
+		bool read_body_index_frame(IMultiSourceFrame *p_multi_source_frame);
+		bool read_body_frame(IMultiSourceFrame *p_multi_source_frame);
+
 		bool color_data_32bpp(int p_hor_offset, int p_ver_offset, int p_width, int p_height, unsigned char *p_data);
 		bool color_data_24bpp(int p_hor_offset, int p_ver_offset, int p_width, int p_height, unsigned char *p_data);
 
@@ -62,7 +72,6 @@ class DeviceKinectV2 : public Device
 	public :
 		std::unique_ptr<struct DeviceKinectV2Private>	m_private;
 		static DeviceVideoResolution					m_video_resolutions[];
-
 };
 
 } // namespace motion

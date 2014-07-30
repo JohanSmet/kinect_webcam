@@ -165,10 +165,30 @@ int	DeviceKinect::video_resolution_preferred()
 	return 0;
 }
 
+int	DeviceKinect::video_resolution_native()
+{
+	return 0;
+}
+
 DeviceVideoResolution DeviceKinect::video_resolution(int p_index)
 {
 	return m_video_resolutions[p_index];
 } 
+
+//
+// body tracking
+//
+
+bool DeviceKinect::focus_availabe()
+{
+	return false;
+}
+
+Point2D	DeviceKinect::focus_point()
+{
+	return {0,0};
+}
+
 
 //
 // update detected data
@@ -190,7 +210,7 @@ bool DeviceKinect::update()
 // access to image data
 //
 
-bool DeviceKinect::color_data(int p_width, int p_height, int p_bpp, unsigned char *p_data)
+bool DeviceKinect::color_data(int p_hor_focus, int p_ver_focus, int p_width, int p_height, int p_bpp, unsigned char *p_data)
 {
 	if (p_width  > m_private->m_color_width  ||
 	    p_height > m_private->m_color_height)
@@ -199,8 +219,11 @@ bool DeviceKinect::color_data(int p_width, int p_height, int p_bpp, unsigned cha
 	}
 
 	// offsets
-	int f_hor_offset = (m_private->m_color_width - p_width) / 2;
-	int f_ver_offset = (m_private->m_color_height - p_height) / 2;
+	int f_hor_offset = p_hor_focus - (p_width / 2);
+	f_hor_offset	 = min(max(f_hor_offset, 0), m_private->m_color_width - p_width);
+
+	int f_ver_offset = p_ver_focus - (p_height / 2);
+	f_ver_offset	 = min(max(f_ver_offset, 0), m_private->m_color_height - p_height);
 
 	switch (p_bpp)
 	{	

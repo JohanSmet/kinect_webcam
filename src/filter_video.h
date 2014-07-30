@@ -88,13 +88,14 @@ class CKCamStream : public CSourceStream,  public IAMDroppedFrames, public IAMSt
 		HRESULT SetMediaType(const CMediaType *pmt);
 		HRESULT OnThreadCreate(void);
 		HRESULT OnThreadDestroy(void);
-    
+
 	// variables
 	private:
 		CKCam *	m_pParent;
 
 		// the device 
 		std::unique_ptr<device::Device>	m_device;
+		device::Point2D					m_focus;
 
 		// timing (dropped frames)
 		long			m_num_frames;

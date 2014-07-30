@@ -29,6 +29,11 @@ struct DeviceVideoResolution
 	int m_framerate;
 };
 
+struct Point2D {
+	int	m_x;
+	int m_y;
+};
+
 class Device
 {
 	public :
@@ -42,13 +47,18 @@ class Device
 		// resolutions
 		virtual int					  video_resolution_count() = 0;
 		virtual int					  video_resolution_preferred() = 0;
+		virtual int					  video_resolution_native() = 0;
 		virtual DeviceVideoResolution video_resolution(int p_index) = 0;
+
+		// body tracking
+		virtual bool				  focus_availabe() = 0;
+		virtual Point2D				  focus_point() = 0;
 
 		// update
 		virtual bool update() = 0;
 		
 		// access to image data
-		virtual bool color_data(int p_width, int p_height, int p_bpp, unsigned char *p_data) = 0;
+		virtual bool color_data(int p_hor_focus, int p_ver_focus, int p_width, int p_height, int p_bpp, unsigned char *p_data) = 0;
 };
 
 } // namespace motion
