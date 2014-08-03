@@ -22,6 +22,7 @@
 #include "filter_video.h"
 #include "device.h"
 #include "device_factory.h"
+#include "settings.h"
 
 inline int FrameIntervalFromRate(int framesPerSecond)
 {
@@ -104,6 +105,9 @@ CKCamStream::CKCamStream(HRESULT *phr, CKCam *pParent, LPCWSTR pPinName) :
 	m_num_dropped(0),
 	m_pParent(pParent)
 {
+	// try to load the settings
+	settings::load();
+
 	// try to connect to a kinect V2
 	if (!m_device)
 	{
@@ -212,10 +216,13 @@ HRESULT CKCamStream::FillBuffer(IMediaSample *pms)
 	pms->SetTime(&f_now, &m_time_stream);
 	pms->SetSyncPoint(TRUE);
 
+	if (settings::have_changed())
+		settings::load();
+
 	// let the device update itself
 	m_device->update();
 
-	if (m_device->focus_availabe())
+	if (settings::TrackingEnabled && m_device->focus_availabe())
 	{
 		m_focus = smooth_focus_update(m_device->focus_point());
 	}
@@ -363,12 +370,13 @@ HRESULT CKCamStream::OnThreadCreate()
 	m_num_dropped = 0;
 	m_num_frames  = 0;
 
-
     return NOERROR;
 }
 
 HRESULT CKCamStream::OnThreadDestroy()
 {
+	settings::cleanup();
+
 	if (!m_device->disconnect())
 		return E_FAIL;
 
