@@ -179,6 +179,11 @@ DeviceVideoResolution DeviceKinect::video_resolution(int p_index)
 // body tracking
 //
 
+
+void DeviceKinect::focus_set_joint(int p_joint)
+{
+}
+
 bool DeviceKinect::focus_availabe()
 {
 	return false;

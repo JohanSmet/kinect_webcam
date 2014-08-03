@@ -51,6 +51,7 @@ class Device
 		virtual DeviceVideoResolution video_resolution(int p_index) = 0;
 
 		// body tracking
+		virtual void				  focus_set_joint(int p_joint) = 0;
 		virtual bool				  focus_availabe() = 0;
 		virtual Point2D				  focus_point() = 0;
 

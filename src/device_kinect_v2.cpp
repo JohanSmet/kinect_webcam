@@ -43,6 +43,7 @@ struct DeviceKinectV2Private
 
 	static const int			MAX_BODIES = 6;
 	IBody *						m_kinect_bodies[MAX_BODIES];
+	int							m_focus_joint;
 	bool						m_focus_available;
 	Point2D						m_focus;
 };
@@ -198,7 +199,8 @@ bool DeviceKinectV2::connect_to_first()
 	}
 
 	if (m_private->m_sensor != nullptr)
-	{
+	{	
+		m_private->m_focus_joint	 = JointType_Head;
 		m_private->m_focus_available = false;
 		m_private->m_focus			 = {0, 0};
 		return true;
@@ -255,6 +257,12 @@ DeviceVideoResolution DeviceKinectV2::video_resolution(int p_index)
 //
 // body tracking
 //
+
+void DeviceKinectV2::focus_set_joint(int p_joint)
+{
+	if (p_joint >= 0 && p_joint < JointType_Count)
+		m_private->m_focus_joint = p_joint;
+}
 
 bool DeviceKinectV2::focus_availabe()
 {
@@ -448,7 +456,7 @@ bool DeviceKinectV2::read_body_frame(IMultiSourceFrame *p_multi_source_frame)
 		if (SUCCEEDED(f_result) && f_is_tracked)
 		{
 			ColorSpacePoint	f_point;
-			f_result = m_private->m_sensor_coordinate_mapper->MapCameraPointToColorSpace(f_joints[JointType_Head].Position, &f_point);
+			f_result = m_private->m_sensor_coordinate_mapper->MapCameraPointToColorSpace(f_joints[m_private->m_focus_joint].Position, &f_point);
 
 			if (SUCCEEDED (f_result))
 			{

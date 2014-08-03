@@ -219,6 +219,8 @@ HRESULT CKCamStream::FillBuffer(IMediaSample *pms)
 	if (settings::have_changed())
 		settings::load();
 
+	m_device->focus_set_joint(settings::TrackingJoint);
+
 	// let the device update itself
 	m_device->update();
 

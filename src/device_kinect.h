@@ -49,6 +49,7 @@ class DeviceKinect : public Device
 		virtual DeviceVideoResolution	video_resolution(int p_index);
 
 		// body tracking
+		virtual void				  focus_set_joint(int p_joint);
 		virtual bool				  focus_availabe();
 		virtual Point2D				  focus_point();
 
