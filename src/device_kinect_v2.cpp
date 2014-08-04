@@ -89,6 +89,10 @@ HRESULT kinectv2_init_depth_image(IDepthFrameSource *p_source, DeviceKinectV2Pri
 
 DeviceKinectV2::DeviceKinectV2() :	m_private(std::make_unique<DeviceKinectV2Private>())
 {
+	m_private->m_sensor						= nullptr;
+	m_private->m_sensor_color_reader		= nullptr;
+	m_private->m_sensor_multi_reader		= nullptr;
+	m_private->m_sensor_coordinate_mapper	= nullptr;
 }
 
 DeviceKinectV2::~DeviceKinectV2()

@@ -21,6 +21,8 @@
 #include <Shlobj.h>
 #include <NuiApi.h>
 
+#include "image.h"
+
 namespace device {
 
 struct DeviceKinectPrivate 
@@ -40,6 +42,8 @@ struct DeviceKinectPrivate
 
 DeviceKinect::DeviceKinect() :	m_private(std::make_unique<DeviceKinectPrivate>())
 {
+	m_private->m_sensor				= nullptr;
+	m_private->m_sensor_data_event	= INVALID_HANDLE_VALUE;
 }
 
 DeviceKinect::~DeviceKinect()
@@ -142,6 +146,8 @@ bool DeviceKinect::disconnect()
 		m_private->m_sensor->Release();
 	}
 
+	m_private->m_color_data.clear();
+
 	return true;
 }
 
@@ -201,6 +207,9 @@ Point2D	DeviceKinect::focus_point()
 
 bool DeviceKinect::update()
 {
+	if (!m_private->m_sensor)
+		return false;
+
 	// check if there is new data available (don't block)
 	if (WaitForSingleObject(m_private->m_sensor_data_event, 0)	!= WAIT_OBJECT_0)
 	{
@@ -217,6 +226,9 @@ bool DeviceKinect::update()
 
 bool DeviceKinect::color_data(int p_hor_focus, int p_ver_focus, int p_width, int p_height, int p_bpp, unsigned char *p_data)
 {
+	if (m_private->m_color_data.empty())
+		return false;
+
 	if (p_width  > m_private->m_color_width  ||
 	    p_height > m_private->m_color_height)
 	{
@@ -233,61 +245,17 @@ bool DeviceKinect::color_data(int p_hor_focus, int p_ver_focus, int p_width, int
 	switch (p_bpp)
 	{	
 		case 32 :
-			return color_data_32bpp(f_hor_offset, f_ver_offset, p_width, p_height, p_data);
-
+			return img::copy_region_32bpp_32bpp(m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(),
+												f_hor_offset, f_ver_offset, p_width, p_height, p_data);
+				
 		case 24 :
-			return color_data_24bpp(f_hor_offset, f_ver_offset, p_width, p_height, p_data);
+			return img::copy_region_32bpp_24bpp(m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(),
+												f_hor_offset, f_ver_offset, p_width, p_height, p_data);
 	
 		default :
 			return false;
 	}
-}
 
-bool DeviceKinect::color_data_32bpp(int p_hor_offset, int p_ver_offset, int p_width, int p_height, unsigned char *p_data)
-{
-	const int	f_pixel_size	= 4;
-	int			f_line_size		= p_width * f_pixel_size;
-	int			f_line_stride	= m_private->m_color_width * f_pixel_size;
-	const auto *f_src_start		= m_private->m_color_data.data() + (p_hor_offset * f_pixel_size) + (p_ver_offset * f_line_stride);
-
-	// swap the picture vertically
-	for (const auto *f_src_line = f_src_start + (f_line_stride * (p_height - 1));	// start of the last line
-		 f_src_line >= f_src_start;
-		 f_src_line -= f_line_stride, p_data += f_line_size)
-	{
-		memcpy(p_data, f_src_line, f_line_size);
-	}
-
-	return true;
-}
-
-bool DeviceKinect::color_data_24bpp(int p_hor_offset, int p_ver_offset, int p_width, int p_height, unsigned char *p_data)
-{
-	const int	f_s_pixel_size	= 4;
-	const int	f_d_pixel_size	= 3;
-	const int	f_d_line_size	= p_width * f_d_pixel_size;
-	const int	f_s_line_stride	= m_private->m_color_width * f_s_pixel_size;
-
-	const auto *f_src_start		= m_private->m_color_data.data() + (p_hor_offset * f_s_pixel_size) + (p_ver_offset * f_s_line_stride);
-
-	// swap the picture vertically
-	for (const auto *f_src_line = f_src_start + (f_s_line_stride * (p_height - 1));	// start of the last line
-		 f_src_line >= f_src_start;
-		 f_src_line -= f_s_line_stride, p_data += f_d_line_size)
-	{
-		auto *f_src = f_src_line;
-		auto *f_dst = p_data;
-
-		for (int f_w = 0; f_w < p_width; ++f_w)
-		{
-			*f_dst++ = *f_src++;
-			*f_dst++ = *f_src++;
-			*f_dst++ = *f_src++;
-			++f_src;
-		}
-	}
-
-	return true;
 }
 
 bool DeviceKinect::read_color_frame()

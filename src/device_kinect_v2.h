@@ -66,9 +66,6 @@ class DeviceKinectV2 : public Device
 		bool read_body_index_frame(IMultiSourceFrame *p_multi_source_frame);
 		bool read_body_frame(IMultiSourceFrame *p_multi_source_frame);
 
-		bool color_data_32bpp(int p_hor_offset, int p_ver_offset, int p_width, int p_height, unsigned char *p_data);
-		bool color_data_24bpp(int p_hor_offset, int p_ver_offset, int p_width, int p_height, unsigned char *p_data);
-
 	// member variables
 	public :
 		std::unique_ptr<struct DeviceKinectV2Private>	m_private;

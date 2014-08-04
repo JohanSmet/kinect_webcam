@@ -62,8 +62,6 @@ class DeviceKinect : public Device
 	// helper function
 	private :
 		bool read_color_frame();
-		bool color_data_32bpp(int p_hor_offset, int p_ver_offset, int p_width, int p_height, unsigned char *p_data);
-		bool color_data_24bpp(int p_hor_offset, int p_ver_offset, int p_width, int p_height, unsigned char *p_data);
 
 	// member variables
 	public :
