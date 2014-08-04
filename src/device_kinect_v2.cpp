@@ -219,6 +219,10 @@ bool DeviceKinectV2::disconnect()
 		com_safe_release(&m_private->m_sensor);
 	}
 
+	m_private->m_color_data.clear();
+	m_private->m_depth_data.clear();
+	m_private->m_body_index_data.clear();
+
 	return true;
 }
 
@@ -280,13 +284,17 @@ Point2D	DeviceKinectV2::focus_point()
 
 bool DeviceKinectV2::update()
 {
+	// sensor connected ?
+	if (!m_private->m_sensor)
+		return false;
+
 	// read the color frame separately - the kinect can drop to 15fps in low light conditions 
 	//	but we don't want to delay the other data sources
 	bool f_new_data = read_color_frame();
 
 	// check if there's new data available in the multi-source reader
 	com_safe_ptr_t<IMultiSourceFrame>	f_multi_frame = nullptr;
-	if (SUCCEEDED(m_private->m_sensor_multi_reader->AcquireLatestFrame(&f_multi_frame)))
+	if (m_private->m_sensor_multi_reader && (m_private->m_sensor_multi_reader->AcquireLatestFrame(&f_multi_frame)))
 	{ 
 		f_new_data |= read_body_index_frame(f_multi_frame.get());
 		f_new_data |= read_body_frame(f_multi_frame.get());
@@ -302,6 +310,9 @@ bool DeviceKinectV2::update()
 
 bool DeviceKinectV2::color_data(int p_hor_focus, int p_ver_focus, int p_width, int p_height, int p_bpp, unsigned char *p_data)
 {
+	if (m_private->m_color_data.empty())
+		return false;
+
 	if (p_width  > m_private->m_color_width  ||
 	    p_height > m_private->m_color_height)
 	{
@@ -332,6 +343,9 @@ bool DeviceKinectV2::color_data(int p_hor_focus, int p_ver_focus, int p_width, i
 
 bool DeviceKinectV2::read_color_frame()
 {
+	if (!m_private->m_sensor_color_reader)
+		return false;
+
 	com_safe_ptr_t<IColorFrame> f_frame = nullptr;
 
 	// try to read the next frame
@@ -349,6 +363,9 @@ bool DeviceKinectV2::read_body_index_frame(IMultiSourceFrame *p_multi_source_fra
 {
 	com_safe_ptr_t<IBodyIndexFrameReference> f_frame_ref = nullptr;
 	com_safe_ptr_t<IBodyIndexFrame>			 f_frame = nullptr;
+
+	if (!p_multi_source_frame)
+		return false;
 
 	// try to read the next frame
 	auto f_result = p_multi_source_frame->get_BodyIndexFrameReference(&f_frame_ref);
@@ -370,6 +387,9 @@ bool DeviceKinectV2::read_body_frame(IMultiSourceFrame *p_multi_source_frame)
 {
 	com_safe_ptr_t<IBodyFrameReference> f_frame_ref = nullptr;
 	com_safe_ptr_t<IBodyFrame>			f_frame = nullptr;
+
+	if (!p_multi_source_frame)
+		return false;
 
 	// try and read the next frame
 	auto f_result = p_multi_source_frame->get_BodyFrameReference(&f_frame_ref);
@@ -422,8 +442,5 @@ bool DeviceKinectV2::read_body_frame(IMultiSourceFrame *p_multi_source_frame)
 
 	return SUCCEEDED(f_result);
 }
-
-
-
 
 } // namespace device

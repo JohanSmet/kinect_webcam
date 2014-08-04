@@ -133,13 +133,26 @@ CKCamStream::CKCamStream(HRESULT *phr, CKCam *pParent, LPCWSTR pPinName) :
 	}
 
 	// initialize the camera focus in the center of the camera
-	auto f_native_res = m_device->video_resolution(m_device->video_resolution_native());
-	m_focus.m_x = f_native_res.m_width / 2;
-	m_focus.m_y = f_native_res.m_height / 2;
+	if (m_device)
+	{
+		auto f_native_res = m_device->video_resolution(m_device->video_resolution_native());
+		m_focus.m_x = f_native_res.m_width / 2;
+		m_focus.m_y = f_native_res.m_height / 2;
+	}
+
+	// disconnect from the device until playback is started
+	if (m_device)
+	{
+		m_device->disconnect();
+	}
 }
 
 CKCamStream::~CKCamStream()
 {
+	if (m_device)
+	{
+		m_device->disconnect();
+	}
 } 
 
 HRESULT CKCamStream::QueryInterface(REFIID riid, void **ppv)
@@ -166,6 +179,9 @@ HRESULT CKCamStream::QueryInterface(REFIID riid, void **ppv)
 HRESULT CKCamStream::FillBuffer(IMediaSample *pms)
 {
 	const REFERENCE_TIME AVG_FRAME_TIME = (reinterpret_cast<VIDEOINFOHEADER*> (m_mt.pbFormat))->AvgTimePerFrame;
+
+	if (!m_device)
+		return E_FAIL;
 
 	// get the current time from the reference clock	
 	IReferenceClock *f_clock = nullptr;
@@ -268,6 +284,9 @@ HRESULT CKCamStream::GetMediaType(int iPosition, CMediaType *pmt)
 {
 	DbgLog((LOG_TRACE, 1, "GetMediaType (iPosition = %d)", iPosition));
 
+	if (!m_device)
+		return E_FAIL;
+
     if (iPosition < 0) return E_INVALIDARG;
     if (iPosition > m_device->video_resolution_count()) return VFW_S_NO_MORE_ITEMS;
 
@@ -321,6 +340,9 @@ HRESULT CKCamStream::CheckMediaType(const CMediaType *pMediaType)
 	//	=> we just check some crucial parameters of the requested media type match with something we offer
 	DbgLog((LOG_TRACE, 1, "CheckMediaType"));
 
+	if (!m_device)
+		return E_FAIL;
+
     DECLARE_PTR(VIDEOINFOHEADER, f_pvi, pMediaType->pbFormat);
 	DbgLog((LOG_TRACE, 1, "... CheckMediaType (%dx%dx%d)", f_pvi->bmiHeader.biWidth, f_pvi->bmiHeader.biHeight, f_pvi->bmiHeader.biBitCount));
 
@@ -372,15 +394,28 @@ HRESULT CKCamStream::OnThreadCreate()
 	m_num_dropped = 0;
 	m_num_frames  = 0;
 
+	// be sure to refresh the settings
+	settings::load();
+
+	// reconnect to the device
+	if (m_device)
+	{
+		m_device->connect_to_first();
+	}
+
     return NOERROR;
 }
 
 HRESULT CKCamStream::OnThreadDestroy()
 {
-	settings::cleanup();
+	// disconnect from the device
+	if (m_device)
+	{
+		m_device->disconnect();
+	}
 
-	if (!m_device->disconnect())
-		return E_FAIL;
+	// stop monitoring settings
+	settings::cleanup();
 
     return NOERROR;
 }
@@ -399,6 +434,9 @@ HRESULT STDMETHODCALLTYPE CKCamStream::SetFormat(AM_MEDIA_TYPE *pmt)
 	// If the pin is already connected, and the pin supports the media type, reconnect the pin with that type. 
 	//	If the other pin rejects the new type, return VFW_E_INVALIDMEDIATYPE and restore the original connection.
 	DbgLog((LOG_TRACE, 1, "SetFormat : %x", pmt));
+
+	if (!m_device)
+		return E_FAIL;
 
 	if (!pmt)
 	{
@@ -438,6 +476,9 @@ HRESULT STDMETHODCALLTYPE CKCamStream::GetFormat(AM_MEDIA_TYPE **ppmt)
 
 HRESULT STDMETHODCALLTYPE CKCamStream::GetNumberOfCapabilities(int *piCount, int *piSize)
 {
+	if (!m_device)
+		return E_FAIL;
+
     *piCount = m_device->video_resolution_count();
     *piSize = sizeof(VIDEO_STREAM_CONFIG_CAPS);
     return S_OK;
@@ -445,6 +486,9 @@ HRESULT STDMETHODCALLTYPE CKCamStream::GetNumberOfCapabilities(int *piCount, int
 
 HRESULT STDMETHODCALLTYPE CKCamStream::GetStreamCaps(int iIndex, AM_MEDIA_TYPE **pmt, BYTE *pSCC)
 {
+	if (!m_device)
+		return E_FAIL;
+
     *pmt = CreateMediaType(&m_mt);
     DECLARE_PTR(VIDEOINFOHEADER, pvi, (*pmt)->pbFormat);
 
