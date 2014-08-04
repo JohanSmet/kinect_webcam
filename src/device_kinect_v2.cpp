@@ -330,53 +330,6 @@ bool DeviceKinectV2::color_data(int p_hor_focus, int p_ver_focus, int p_width, i
 	}
 }
 
-bool DeviceKinectV2::color_data_32bpp(int p_hor_offset, int p_ver_offset, int p_width, int p_height, unsigned char *p_data)
-{
-	const int	f_pixel_size	= 4;
-	int			f_line_size		= p_width * f_pixel_size;
-	int			f_line_stride	= m_private->m_color_width * f_pixel_size;
-	const auto *f_src_start		= m_private->m_color_data.data() + (p_hor_offset * f_pixel_size) + (p_ver_offset * f_line_stride);
-
-	// swap the picture vertically
-	for (const auto *f_src_line = f_src_start + (f_line_stride * (p_height - 1));	// start of the last line
-		 f_src_line >= f_src_start;
-		 f_src_line -= f_line_stride, p_data += f_line_size)
-	{
-		memcpy(p_data, f_src_line, f_line_size);
-	}
-
-	return true;
-}
-
-bool DeviceKinectV2::color_data_24bpp(int p_hor_offset, int p_ver_offset, int p_width, int p_height, unsigned char *p_data)
-{
-	const int	f_s_pixel_size	= 4;
-	const int	f_d_pixel_size	= 3;
-	const int	f_d_line_size	= p_width * f_d_pixel_size;
-	const int	f_s_line_stride	= m_private->m_color_width * f_s_pixel_size;
-
-	const auto *f_src_start		= m_private->m_color_data.data() + (p_hor_offset * f_s_pixel_size) + (p_ver_offset * f_s_line_stride);
-
-	// swap the picture vertically
-	for (const auto *f_src_line = f_src_start + (f_s_line_stride * (p_height - 1));	// start of the last line
-		 f_src_line >= f_src_start;
-		 f_src_line -= f_s_line_stride, p_data += f_d_line_size)
-	{
-		auto *f_src = f_src_line;
-		auto *f_dst = p_data;
-
-		for (int f_w = 0; f_w < p_width; ++f_w)
-		{
-			*f_dst++ = *f_src++;
-			*f_dst++ = *f_src++;
-			*f_dst++ = *f_src++;
-			++f_src;
-		}
-	}
-
-	return true;
-}
-
 bool DeviceKinectV2::read_color_frame()
 {
 	com_safe_ptr_t<IColorFrame> f_frame = nullptr;
