@@ -298,7 +298,7 @@ bool DeviceKinectV2::update()
 
 	// check if there's new data available in the multi-source reader
 	com_safe_ptr_t<IMultiSourceFrame>	f_multi_frame = nullptr;
-	if (m_private->m_sensor_multi_reader && (m_private->m_sensor_multi_reader->AcquireLatestFrame(&f_multi_frame)))
+	if (m_private->m_sensor_multi_reader && SUCCEEDED (m_private->m_sensor_multi_reader->AcquireLatestFrame(&f_multi_frame)))
 	{ 
 		f_new_data |= read_body_index_frame(f_multi_frame.get());
 		f_new_data |= read_body_frame(f_multi_frame.get());
