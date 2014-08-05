@@ -62,6 +62,7 @@ class DeviceKinect : public Device
 	// helper function
 	private :
 		bool read_color_frame();
+		bool read_skeleton_frame();
 
 	// member variables
 	public :

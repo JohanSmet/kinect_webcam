@@ -34,6 +34,10 @@ struct DeviceKinectPrivate
 	int					m_color_width;
 	int					m_color_height;
 	std::vector<BYTE>	m_color_data;
+
+	int					m_focus_joint;
+	bool				m_focus_available;
+	Point2D				m_focus;
 };
 
 //
@@ -93,7 +97,7 @@ bool DeviceKinect::connect_to_first()
 	// initialize the kinect
 	if (m_private->m_sensor != nullptr)
 	{
-		f_result = m_private->m_sensor->NuiInitialize(NUI_INITIALIZE_FLAG_USES_COLOR); 
+		f_result = m_private->m_sensor->NuiInitialize(NUI_INITIALIZE_FLAG_USES_SKELETON | NUI_INITIALIZE_FLAG_USES_COLOR); 
         
 		if (SUCCEEDED(f_result))
         {
@@ -117,6 +121,12 @@ bool DeviceKinect::connect_to_first()
 			m_private->m_color_data.resize(640 * 480 * 4);
 		}
 
+		if (SUCCEEDED(f_result))
+		{
+			// enable skeletal tracking
+			f_result = m_private->m_sensor->NuiSkeletonTrackingEnable(nullptr, NUI_SKELETON_TRACKING_FLAG_ENABLE_SEATED_SUPPORT);
+		}
+
 		if (FAILED(f_result))
 		{
 			m_private->m_sensor->Release();
@@ -126,6 +136,9 @@ bool DeviceKinect::connect_to_first()
 
 	if (m_private->m_sensor != nullptr)
 	{
+		m_private->m_focus_joint	 = NUI_SKELETON_POSITION_HEAD;
+		m_private->m_focus_available = false;
+		m_private->m_focus			 = {0, 0};
 		return true;
 	}
     
@@ -144,6 +157,7 @@ bool DeviceKinect::disconnect()
 	{
 		m_private->m_sensor->NuiShutdown();
 		m_private->m_sensor->Release();
+		m_private->m_sensor = nullptr;
 	}
 
 	m_private->m_color_data.clear();
@@ -188,16 +202,18 @@ DeviceVideoResolution DeviceKinect::video_resolution(int p_index)
 
 void DeviceKinect::focus_set_joint(int p_joint)
 {
+	if (p_joint >= 0 && p_joint < NUI_SKELETON_POSITION_COUNT)
+		m_private->m_focus_joint = p_joint;
 }
 
 bool DeviceKinect::focus_availabe()
 {
-	return false;
+	return m_private->m_focus_available;
 }
 
 Point2D	DeviceKinect::focus_point()
 {
-	return {0,0};
+	return m_private->m_focus;
 }
 
 
@@ -211,13 +227,16 @@ bool DeviceKinect::update()
 		return false;
 
 	// check if there is new data available (don't block)
-	if (WaitForSingleObject(m_private->m_sensor_data_event, 0)	!= WAIT_OBJECT_0)
+	if (WaitForSingleObject(m_private->m_sensor_data_event, 0) != WAIT_OBJECT_0)
 	{
 		return false;									// exit !!!
 	}
 
 	// retrieve updated data from the device
-	return read_color_frame();
+	bool f_result = read_color_frame();
+	f_result &= read_skeleton_frame();
+
+	return f_result;
 }
 
 //
@@ -283,6 +302,60 @@ bool DeviceKinect::read_color_frame()
 
     // release the frame
     m_private->m_sensor->NuiImageStreamReleaseFrame(m_private->m_sensor_color_stream, &f_frame);
+	return true;
+}
+
+bool DeviceKinect::read_skeleton_frame()
+{
+	// get the kinect skeleton
+	NUI_SKELETON_FRAME	f_kinect_skeletons = {0};
+	HRESULT				f_result		   = m_private->m_sensor->NuiSkeletonGetNextFrame(0, &f_kinect_skeletons);
+
+    if (FAILED(f_result))
+    {
+        return false;
+    }
+
+	// smooth out the skeleton data (todo: allow the parameters to be tweaked)
+	const NUI_TRANSFORM_SMOOTH_PARAMETERS DefaultParams =			{0.5f, 0.5f, 0.5f, 0.05f, 0.04f};
+	const NUI_TRANSFORM_SMOOTH_PARAMETERS SomewhatLatentParams =	{0.5f, 0.1f, 0.5f, 0.1f, 0.1f};
+	const NUI_TRANSFORM_SMOOTH_PARAMETERS VerySmoothParams =		{0.7f, 0.3f, 1.0f, 1.0f, 1.0f};
+
+    f_result = m_private->m_sensor->NuiTransformSmooth(&f_kinect_skeletons, &SomewhatLatentParams);
+
+	// iterate of the skeletons and focus on the first
+	m_private->m_focus_available = false;
+
+	for (auto f_idx = 0; SUCCEEDED(f_result) && !m_private->m_focus_available && f_idx < NUI_SKELETON_COUNT; ++f_idx)
+	{
+		auto &f_kinect_skeleton = f_kinect_skeletons.SkeletonData[f_idx];
+
+		// is the body tracked ?
+		bool f_is_tracked = (f_kinect_skeleton.eTrackingState == NUI_SKELETON_TRACKED);
+	
+		// convert the location of the focus joint to color space
+		if (f_is_tracked)
+		{
+			LONG	f_depth_x, f_depth_y;
+			LONG	f_color_x, f_color_y;
+			USHORT	f_depth;
+
+			NuiTransformSkeletonToDepthImage(f_kinect_skeleton.SkeletonPositions[m_private->m_focus_joint], 
+											 &f_depth_x, &f_depth_y, &f_depth);
+
+			f_result = NuiImageGetColorPixelCoordinatesFromDepthPixel(	NUI_IMAGE_RESOLUTION_640x480, nullptr, 
+																		f_depth_x, f_depth_y, f_depth,
+																		&f_color_x, &f_color_y);
+
+			if (SUCCEEDED (f_result))
+			{
+				m_private->m_focus_available = true;
+				m_private->m_focus.m_x		 = f_color_x;
+				m_private->m_focus.m_y		 = f_color_y;
+			}
+		}
+	}
+
 	return true;
 }
 
