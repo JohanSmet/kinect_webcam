@@ -14,3 +14,6 @@
 
 SETTING_BOOLEAN(TrackingEnabled,	true)
 SETTING_INTEGER(TrackingJoint,		3)			// JointType_Head
+
+SETTING_BOOLEAN(KinectV1Enabled,	true)
+SETTING_BOOLEAN(KinectV2Enabled,	true)

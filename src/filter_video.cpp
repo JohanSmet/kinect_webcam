@@ -109,7 +109,7 @@ CKCamStream::CKCamStream(HRESULT *phr, CKCam *pParent, LPCWSTR pPinName) :
 	settings::load();
 
 	// try to connect to a kinect V2
-	if (!m_device)
+	if (!m_device && settings::KinectV2Enabled)
 	{
 		m_device = device::device_factory("kinect_v2");
 
@@ -118,7 +118,7 @@ CKCamStream::CKCamStream(HRESULT *phr, CKCam *pParent, LPCWSTR pPinName) :
 	}
 
 	// fallback to an original kinect
-	if (!m_device)
+	if (!m_device && settings::KinectV1Enabled)
 	{
 		m_device = device::device_factory("kinect");
 
