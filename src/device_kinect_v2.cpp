@@ -408,7 +408,7 @@ bool DeviceKinectV2::read_body_frame(IMultiSourceFrame *p_multi_source_frame)
 		f_result = f_frame->GetAndRefreshBodyData(DeviceKinectV2Private::MAX_BODIES, m_private->m_kinect_bodies);
 	}
 
-	// iterate of the bodie
+	// iterate of the bodies
 	m_private->m_focus_available = false;
 
 	for (auto f_idx = 0; SUCCEEDED(f_result) && !m_private->m_focus_available && f_idx < DeviceKinectV2Private::MAX_BODIES; ++f_idx)
@@ -429,7 +429,7 @@ bool DeviceKinectV2::read_body_frame(IMultiSourceFrame *p_multi_source_frame)
 			f_result = f_body->GetJoints(JointType_Count, f_joints);
 		}
 	
-		// convert the location of the head joint to color space
+		// convert the location of the focus joint to color space
 		if (SUCCEEDED(f_result) && f_is_tracked)
 		{
 			ColorSpacePoint	f_point;
