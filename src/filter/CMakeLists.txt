@@ -43,10 +43,11 @@ else()
 endif()
 
 # kinect webcam
-glob_sources(.)
+glob_sources(. ../common)
 
 include_directories(${KINECT_V1_INC}
-					${KINECT_V2_INC})
+					${KINECT_V2_INC}
+					../common)
 
 add_library(kinect_webcam SHARED ${Sources})
 target_link_libraries(kinect_webcam strmbase
