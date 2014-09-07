@@ -24,12 +24,16 @@ DSVideoCapture::DSVideoCapture() :	m_graph(nullptr),
 {
 }
 
-void DSVideoCapture::preview_device(GUID p_device, RECT p_window, HWND p_video_parent)
+bool DSVideoCapture::initialize(GUID p_capture_guid)
 {
-	// capture filter
-    if (!create_capture_filter(p_device))
-		return;
+    if (!create_capture_filter(p_capture_guid))
+		return false;
 
+	return true;
+}
+
+void DSVideoCapture::preview_device(RECT p_window, HWND p_video_parent)
+{
 	// graph
     if (!graph_initialize())
 		return;

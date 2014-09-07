@@ -37,8 +37,11 @@ class DSVideoCapture
 		// construction
         DSVideoCapture();
 
+		// initialize : create the capture filter without starting the previeuw
+		bool initialize(GUID p_capture_guid);
+
 		// create a preview of the specified device in the specified window
-        void preview_device(GUID p_device, RECT p_dimension, HWND p_video_parent = nullptr);
+        void preview_device(RECT p_dimension, HWND p_video_parent = nullptr);
 		void preview_shutdown();
 		
 		// control the position and size of the preview window

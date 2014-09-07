@@ -46,12 +46,16 @@ class MainWindow : public QMainWindow
 		void showEvent(QShowEvent *p_event);
 
 	private:
+		void init_device();
+		void show_preview();
+
 		void ui_from_settings();
 		void ui_to_settings();
 
 	private:
 		Ui::MainWindow *ui;
 		std::unique_ptr<class DSVideoCapture>	m_preview;
+		bool									m_device_ok;
 		bool									m_updating_ui;
 };
 

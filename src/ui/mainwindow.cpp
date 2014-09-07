@@ -23,13 +23,18 @@
 
 MainWindow::MainWindow(QWidget *p_parent) :	QMainWindow(p_parent),
 											ui(new Ui::MainWindow),
-											m_preview(nullptr),
+											m_preview(std::make_unique<DSVideoCapture>()),
+											m_device_ok(false),
 											m_updating_ui(false)
 {
     ui->setupUi(this);
 
+	// settings
 	settings::load();
 	ui_from_settings();
+
+	// initialize capture device
+	init_device();
 }
 
 MainWindow::~MainWindow()
@@ -64,15 +69,9 @@ void MainWindow::closeEvent(QCloseEvent *p_event)
 
 void MainWindow::showEvent(QShowEvent *p_event)
 {
-	if (!m_preview)
+	if (m_preview)
 	{
-		m_preview = std::make_unique<DSVideoCapture>();
-		m_preview->preview_device(CLSID_KinectWebCam, {ui->widget->x(), ui->widget->y(), ui->widget->width(), ui->widget->height()}, hwnd_from_widget(ui->widget));
-	
-		for (const auto &f_res: m_preview->video_resolutions())
-		{
-			ui->selResolution->addItem(QString("%1: %2 x %3 x %4").arg(f_res.m_id).arg(f_res.m_width).arg(f_res.m_height).arg(f_res.m_bpp));
-		}
+		m_preview->preview_device({ui->widget->x(), ui->widget->y(), ui->widget->width(), ui->widget->height()}, hwnd_from_widget(ui->widget));
 	}
 	
 	QMainWindow::showEvent(p_event);
@@ -80,7 +79,7 @@ void MainWindow::showEvent(QShowEvent *p_event)
 
 void MainWindow::on_selResolution_currentIndexChanged (int p_index)
 {
-	if (m_preview)
+	if (m_preview && !m_updating_ui)
 	{
 		auto &f_res = m_preview->video_resolutions()[p_index];
 		
@@ -165,4 +164,23 @@ void MainWindow::ui_to_settings()
 
 	// save to the registry
 	settings::save();
+}
+
+void MainWindow::init_device()
+{
+	m_device_ok = m_preview->initialize(CLSID_KinectWebCam);
+
+	if (m_device_ok)
+	{
+		m_updating_ui = true;
+
+		ui->selResolution->clear();
+
+		for (const auto &f_res: m_preview->video_resolutions())
+		{
+			ui->selResolution->addItem(QString("%1: %2 x %3 x %4").arg(f_res.m_id).arg(f_res.m_width).arg(f_res.m_height).arg(f_res.m_bpp));
+		}
+
+		m_updating_ui = false;
+	}
 }
