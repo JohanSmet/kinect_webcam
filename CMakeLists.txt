@@ -26,5 +26,6 @@ set(CMAKE_SHARED_LIBRARY_SUFFIX ".ax")
 
 include (cmake/build_strmbase.cmake)
 add_subdirectory(src/filter)
+add_subdirectory(src/ui)
 
 # vim: set tabstop=4 shiftwidth=4:

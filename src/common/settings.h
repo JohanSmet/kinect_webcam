@@ -21,6 +21,7 @@ namespace settings {
 
 // interface functions
 void load();
+void save();
 void cleanup();
 
 bool have_changed();
