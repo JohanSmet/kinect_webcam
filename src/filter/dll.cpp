@@ -24,18 +24,14 @@
 #define WIN32_LEAN_AND_MEAN
 #include <streams.h>
 #include <olectl.h>
-#include <initguid.h>
 #include <dllsetup.h>
 
 #include "filter_video.h"
 #include "com_utils.h"
+#include "guid_filter.h"
 
 STDAPI AMovieSetupRegisterServer( CLSID   clsServer, LPCWSTR szDescription, LPCWSTR szFileName, LPCWSTR szThreadingModel = L"Both", LPCWSTR szServerType = L"InprocServer32" );
 STDAPI AMovieSetupUnregisterServer( CLSID clsServer );
-
-// {2aac6912-8c07-4952-98d3-115a89c80c99}
-DEFINE_GUID(CLSID_KinectWebCam,
-0x2aac6912, 0x8c07, 0x4952, 0x98, 0xd3, 0x11, 0x5a, 0x89, 0xc8, 0x0c, 0x99);
 
 const wchar_t FILTER_NAME_KINECT_WEBCAM[] = L"KinectWebCam";
 

@@ -17,8 +17,6 @@
 
 #define DECLARE_PTR(type, ptr, expr) type* ptr = (type*)(expr);
 
-EXTERN_C const GUID CLSID_KinectWebCam;
-
 #include "device.h"
 #include <memory>
 

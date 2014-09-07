@@ -23,6 +23,7 @@
 #include "device.h"
 #include "device_factory.h"
 #include "settings.h"
+#include "guid_filter.h"
 
 inline int FrameIntervalFromRate(int framesPerSecond)
 {
