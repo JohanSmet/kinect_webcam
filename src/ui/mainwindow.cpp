@@ -25,7 +25,7 @@ MainWindow::MainWindow(QWidget *p_parent) :	QMainWindow(p_parent),
 											ui(new Ui::MainWindow),
 											m_preview(std::make_unique<DSVideoCapture>()),
 											m_device_ok(false),
-											m_updating_ui(false)
+											m_updating_ui(true)
 {
     ui->setupUi(this);
 
@@ -35,10 +35,15 @@ MainWindow::MainWindow(QWidget *p_parent) :	QMainWindow(p_parent),
 
 	// initialize capture device
 	init_device();
+
+	m_updating_ui = false;
 }
 
 MainWindow::~MainWindow()
 {
+	if (m_preview)
+		m_preview->shutdown();
+
     delete ui;
 }
 
@@ -69,11 +74,11 @@ void MainWindow::closeEvent(QCloseEvent *p_event)
 
 void MainWindow::showEvent(QShowEvent *p_event)
 {
-	if (m_preview)
+	if (ui->cbEnablePreview->isChecked())
 	{
-		m_preview->preview_device({ui->widget->x(), ui->widget->y(), ui->widget->width(), ui->widget->height()}, hwnd_from_widget(ui->widget));
+		show_preview();
 	}
-	
+
 	QMainWindow::showEvent(p_event);
 }
 
@@ -118,6 +123,13 @@ void MainWindow::on_selTrackingJoint_currentIndexChanged (int p_index)
 		ui_to_settings();
 }
 
+void MainWindow::on_cbEnablePreview_stateChanged (int p_state)
+{
+	if (p_state == Qt::Checked)
+		show_preview();
+	else
+		stop_preview();
+}
 
 void MainWindow::on_btnRegister_clicked()
 {
@@ -182,5 +194,21 @@ void MainWindow::init_device()
 		}
 
 		m_updating_ui = false;
+	}
+}
+
+void MainWindow::show_preview()
+{
+	if (m_preview)
+	{
+		m_preview->preview_device({ui->widget->x(), ui->widget->y(), ui->widget->width(), ui->widget->height()}, hwnd_from_widget(ui->widget));
+	}
+}
+
+void MainWindow::stop_preview()
+{
+	if (m_preview)
+	{
+		m_preview->preview_shutdown();
 	}
 }

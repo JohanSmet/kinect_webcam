@@ -32,6 +32,12 @@ bool DSVideoCapture::initialize(GUID p_capture_guid)
 	return true;
 }
 
+bool DSVideoCapture::shutdown()
+{
+	com_safe_release(&m_source);
+	return true;
+}
+
 void DSVideoCapture::preview_device(RECT p_window, HWND p_video_parent)
 {
 	// graph
@@ -57,6 +63,8 @@ void DSVideoCapture::preview_shutdown()
 bool DSVideoCapture::graph_initialize()
 {
     HRESULT f_result = S_OK;
+
+	CoInitialize(nullptr);
 
     // create a FilterGraph
     if (SUCCEEDED(f_result))
@@ -135,7 +143,6 @@ bool DSVideoCapture::graph_shutdown()
 		
     // release the interface
 	com_safe_release(&m_renderer);
-	com_safe_release(&m_source);
     com_safe_release(&m_control);
 	com_safe_release(&m_config);
     com_safe_release(&m_video_window);
