@@ -58,4 +58,7 @@ set_property (TARGET kinect_webcam APPEND PROPERTY COMPILE_DEFINITIONS UNICODE _
 add_custom_command(TARGET kinect_webcam POST_BUILD 
 				   COMMAND regsvr32 /s $<TARGET_FILE:kinect_webcam>)
 
+
+install (TARGETS kinect_webcam RUNTIME DESTINATION .)
+
 # vim: set tabstop=4 shiftwidth=4:
