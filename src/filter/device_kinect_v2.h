@@ -48,6 +48,8 @@ class DeviceKinectV2 : public Device
 		virtual int						video_resolution_preferred();
 		virtual int						video_resolution_native();
 		virtual DeviceVideoResolution	video_resolution(int p_index);
+		virtual void					video_flip_output(bool p_flip);
+		virtual void					video_set_resolution(DeviceVideoResolution p_devres);
 
 		// body tracking
 		virtual void				  focus_set_joint(int p_joint);
@@ -65,6 +67,8 @@ class DeviceKinectV2 : public Device
 		bool read_color_frame();
 		bool read_body_index_frame(IMultiSourceFrame *p_multi_source_frame);
 		bool read_body_frame(IMultiSourceFrame *p_multi_source_frame);
+
+		bool copy_index_buffer(int p_dst_x, int p_dst_y, int p_dst_width, int p_dst_height, unsigned char *p_dst_data);
 
 	// member variables
 	public :

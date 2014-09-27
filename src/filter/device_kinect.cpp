@@ -169,10 +169,10 @@ bool DeviceKinect::disconnect()
 // video resolutions
 //
 
-DeviceVideoResolution DeviceKinect::m_video_resolutions[] = {	{ 320,  240, 32, 30},
-																{ 640,  480, 32, 30},
-																{ 320,  240, 24, 30},
-																{ 640,  480, 24, 30},
+DeviceVideoResolution DeviceKinect::m_video_resolutions[] = {	{ 320,  240, 32, 30, DPF_RGBA},
+																{ 640,  480, 32, 30, DPF_RGBA},
+																{ 320,  240, 24, 30, DPF_RGB},
+																{ 640,  480, 24, 30, DPF_RGB},
 															};
 
 int	DeviceKinect::video_resolution_count()
@@ -194,6 +194,14 @@ DeviceVideoResolution DeviceKinect::video_resolution(int p_index)
 {
 	return m_video_resolutions[p_index];
 } 
+
+void DeviceKinect::video_set_resolution(DeviceVideoResolution p_devres)
+{
+}
+
+void DeviceKinect::video_flip_output(bool p_flip)
+{
+}
 
 //
 // body tracking

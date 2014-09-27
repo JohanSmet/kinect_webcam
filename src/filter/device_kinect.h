@@ -47,6 +47,8 @@ class DeviceKinect : public Device
 		virtual int						video_resolution_preferred();
 		virtual int						video_resolution_native();
 		virtual DeviceVideoResolution	video_resolution(int p_index);
+		virtual void					video_flip_output(bool p_flip);
+		virtual void					video_set_resolution(DeviceVideoResolution p_devres);
 
 		// body tracking
 		virtual void				  focus_set_joint(int p_joint);

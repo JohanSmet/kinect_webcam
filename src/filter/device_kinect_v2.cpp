@@ -35,6 +35,8 @@ struct DeviceKinectV2Private
 	int							m_color_width;
 	int							m_color_height;
 	std::vector<BYTE>			m_color_data;
+	DevicePixelFormat			m_color_format;
+	bool						m_flip_output;
 
 	int							m_depth_width;
 	int							m_depth_height;
@@ -93,6 +95,8 @@ DeviceKinectV2::DeviceKinectV2() :	m_private(std::make_unique<DeviceKinectV2Priv
 	m_private->m_sensor_color_reader		= nullptr;
 	m_private->m_sensor_multi_reader		= nullptr;
 	m_private->m_sensor_coordinate_mapper	= nullptr;
+	m_private->m_color_format				= DPF_RGBA;
+	m_private->m_flip_output				= true;
 }
 
 DeviceKinectV2::~DeviceKinectV2()
@@ -234,12 +238,14 @@ bool DeviceKinectV2::disconnect()
 // video resolutions
 //
 
-DeviceVideoResolution DeviceKinectV2::m_video_resolutions[] = { { 320,  240, 32, 30},
-																{ 640,  480, 32, 30},
-																{1920, 1080, 32, 30},
-																{ 320,  240, 24, 30},
-																{ 640,  480, 24, 30},
-																{1920, 1080, 24, 30},
+DeviceVideoResolution DeviceKinectV2::m_video_resolutions[] = { { 320,  240, 32, 30, DPF_RGBA},
+																{ 640,  480, 32, 30, DPF_RGBA},
+																{1920, 1080, 32, 30, DPF_RGBA},
+																{ 320,  240, 24, 30, DPF_RGB},
+																{ 640,  480, 24, 30, DPF_RGB},
+																{1920, 1080, 24, 30, DPF_RGB},
+																{ 320,  240, 16, 30, DPF_YUY2},		// XXX do not assume the native format is YUY2
+																{1920, 1080, 16, 30, DPF_YUY2}
 															  };
 
 int	DeviceKinectV2::video_resolution_count()
@@ -261,6 +267,16 @@ DeviceVideoResolution DeviceKinectV2::video_resolution(int p_index)
 {
 	return m_video_resolutions[p_index];
 } 
+
+void DeviceKinectV2::video_set_resolution(DeviceVideoResolution p_devres)
+{
+	m_private->m_color_format = p_devres.m_pixel_format;
+}
+
+void DeviceKinectV2::video_flip_output(bool p_flip)
+{
+	m_private->m_flip_output = p_flip;
+}
 
 //
 // body tracking
@@ -330,15 +346,27 @@ bool DeviceKinectV2::color_data(int p_hor_focus, int p_ver_focus, int p_width, i
 	int f_ver_offset = p_ver_focus - (p_height / 2);
 	f_ver_offset	 = min(max(f_ver_offset, 0), m_private->m_color_height - p_height);
 
-	switch (p_bpp)
+	switch (m_private->m_color_format)
 	{	
-		case 32 :
-			return img::copy_region_32bpp_32bpp(m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(),
-												f_hor_offset, f_ver_offset, p_width, p_height, p_data);
+		case DPF_RGBA :
+			if (m_private->m_flip_output)
+				return img::copy_region_32bpp_32bpp_flipped(m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(),
+															f_hor_offset, f_ver_offset, p_width, p_height, p_data);
 				
-		case 24 :
-			return img::copy_region_32bpp_24bpp(m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(),
-												f_hor_offset, f_ver_offset, p_width, p_height, p_data);
+			else
+				return img::copy_region_32bpp_32bpp(m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(),
+													f_hor_offset, f_ver_offset, p_width, p_height, p_data);
+		case DPF_RGB :
+			if (m_private->m_flip_output)
+				return img::copy_region_32bpp_24bpp_flipped(m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(),
+															f_hor_offset, f_ver_offset, p_width, p_height, p_data);
+			else
+				return img::copy_region_32bpp_24bpp(m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(),
+													f_hor_offset, f_ver_offset, p_width, p_height, p_data);
+
+		case DPF_YUY2 :
+			return img::copy_region_yuy2(	m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(),
+											f_hor_offset, f_ver_offset, p_width, p_height, p_data);
 	
 		default :
 			return false;
@@ -355,9 +383,14 @@ bool DeviceKinectV2::read_color_frame()
 	// try to read the next frame
 	auto f_result = m_private->m_sensor_color_reader->AcquireLatestFrame(&f_frame);
 
-	if (SUCCEEDED(f_result))
+	if (SUCCEEDED(f_result) && (m_private->m_color_format == DPF_RGB || m_private->m_color_format == DPF_RGBA))
 	{
 		f_result = f_frame->CopyConvertedFrameDataToArray(static_cast<UINT> (m_private->m_color_data.size()), m_private->m_color_data.data(), ColorImageFormat_Bgra);
+	}
+
+	if (SUCCEEDED(f_result) && m_private->m_color_format == DPF_YUY2)
+	{
+		f_result = f_frame->CopyRawFrameDataToArray(static_cast<UINT> (m_private->m_color_data.size() / 2), m_private->m_color_data.data());
 	}
 
 	return SUCCEEDED(f_result);
@@ -445,6 +478,41 @@ bool DeviceKinectV2::read_body_frame(IMultiSourceFrame *p_multi_source_frame)
 	}
 
 	return SUCCEEDED(f_result);
+}
+
+bool DeviceKinectV2::copy_index_buffer(int p_dst_x, int p_dst_y, int p_dst_width, int p_dst_height, unsigned char *p_dst_data)
+{
+	const int	f_s_pixel_size	= 1;
+	const int	f_d_pixel_size	= 4;
+	const int	f_d_line_size	= p_dst_width * f_d_pixel_size;
+	const int	f_s_line_stride	= m_private->m_depth_width * f_s_pixel_size;
+
+	p_dst_x = 0;
+	p_dst_y = 0;
+
+	const auto *f_src_start		= m_private->m_body_index_data.data() + (p_dst_x * f_s_pixel_size) + (p_dst_y * f_s_line_stride);
+
+	// swap the picture vertically
+	for (const auto *f_src_line = f_src_start + (f_s_line_stride * (p_dst_height - 1));	// start of the last line
+		 f_src_line >= f_src_start;
+		 f_src_line -= f_s_line_stride, p_dst_data += f_d_line_size)
+	{
+		auto *f_src = f_src_line;
+		auto *f_dst = p_dst_data;
+
+		for (int f_w = 0; f_w < p_dst_width; ++f_w)
+		{
+			unsigned char f_color =  (*f_src++ == 0xff) ? 0x00 : 0xff;
+			
+			*f_dst++ = f_color;
+			*f_dst++ = f_color;
+			*f_dst++ = f_color;
+			*f_dst++ = 0;
+		}
+	}
+
+
+	return true;
 }
 
 } // namespace device

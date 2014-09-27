@@ -30,14 +30,43 @@ inline int FrameIntervalFromRate(int framesPerSecond)
     return UNITS / framesPerSecond;
 }
 
-inline GUID MediaSubTypeFromPixelSize(int p_pixel_size)
+inline int FrameRateFromInterval(REFERENCE_TIME p_interval)
 {
-	switch (p_pixel_size)
+	return static_cast<int> (UNITS / p_interval);
+}
+
+inline DWORD CompressionFromPixelFormat(device::DevicePixelFormat p_pf)
+{
+	switch (p_pf)
 	{
-		case 32 :	return MEDIASUBTYPE_RGB32;
-		case 24 :	return MEDIASUBTYPE_RGB24;
-		default :	return MEDIASUBTYPE_RGB32;		// ? what else are we to do ?
+		case device::DPF_RGBA :	return BI_RGB;
+		case device::DPF_RGB :	return BI_RGB;
+		case device::DPF_YUY2 :	return MAKEFOURCC('Y','U','Y','2');
+		default :				return BI_RGB;
 	}
+}
+
+inline GUID MediaSubTypeFromPixelFormat(device::DevicePixelFormat p_pf)
+{
+	switch (p_pf)
+	{
+		case device::DPF_RGBA :	return MEDIASUBTYPE_RGB32;
+		case device::DPF_RGB :	return MEDIASUBTYPE_RGB24;
+		case device::DPF_YUY2 :	return MEDIASUBTYPE_YUY2;
+		default :				return MEDIASUBTYPE_RGB32;
+	}
+}
+
+inline device::DevicePixelFormat PixelFormatFromMediaSubType(GUID p_mst)
+{
+	if (p_mst == MEDIASUBTYPE_RGB32)
+		return device::DPF_RGBA;
+	else if (p_mst == MEDIASUBTYPE_RGB24)
+		return device::DPF_RGB;
+	else if (p_mst == MEDIASUBTYPE_YUY2)
+		return device::DPF_YUY2;
+
+	return device::DPF_RGBA;
 }
 
 inline device::Point2D smooth_focus_update(device::Point2D p_focus)
@@ -275,7 +304,25 @@ HRESULT CKCamStream::SetMediaType(const CMediaType *pmt)
 	DbgLog((LOG_TRACE, 1, "CKCamStream::SetMediaType : %x", pmt));
     DECLARE_PTR(VIDEOINFOHEADER, pvi, pmt->Format());
 
-	DbgLog((LOG_TRACE, 1, "CKCamStream::SetMediaType : %d x %d", pvi->bmiHeader.biWidth, pvi->bmiHeader.biHeight));
+	DbgLog((LOG_TRACE, 1, "CKCamStream::SetMediaType : %d x %d x %d", pvi->bmiHeader.biWidth, pvi->bmiHeader.biHeight, pvi->bmiHeader.biBitCount));
+
+	// make sure the device outputs in the correct format
+	device::DeviceVideoResolution	f_devres;
+	f_devres.m_width			= pvi->bmiHeader.biWidth;
+	f_devres.m_height			= pvi->bmiHeader.biHeight;
+	f_devres.m_bits_per_pixel	= pvi->bmiHeader.biBitCount;
+	f_devres.m_framerate		= FrameRateFromInterval(pvi->AvgTimePerFrame);
+	f_devres.m_pixel_format		= PixelFormatFromMediaSubType(*pmt->Subtype());
+	m_device->video_set_resolution(f_devres);
+
+	// see documentation of BITMAPINFOHEADER (http://msdn.microsoft.com/en-us/library/windows/desktop/dd318229%28v=vs.85%29.aspx) for more details
+	// - For uncompressed RGB bitmaps, if biHeight is positive, the bitmap is a bottom-up DIB with the origin at the lower left corner. 
+	//	 If biHeight is negative, the bitmap is a top-down DIB with the origin at the upper left corner.
+	// - For YUV bitmaps, the bitmap is always top-down, regardless of the sign of biHeight. 
+	if (pvi->bmiHeader.biCompression == BI_RGB || pvi->bmiHeader.biCompression)
+		m_device->video_flip_output(pvi->bmiHeader.biHeight > 0);
+	else
+		m_device->video_flip_output(false);
 
 	return CSourceStream::SetMediaType(pmt);
 }
@@ -305,7 +352,7 @@ HRESULT CKCamStream::GetMediaType(int iPosition, CMediaType *pmt)
     DECLARE_PTR(VIDEOINFOHEADER, pvi, pmt->AllocFormatBuffer(sizeof(VIDEOINFOHEADER)));
     ZeroMemory(pvi, sizeof(VIDEOINFOHEADER));
 
-    pvi->bmiHeader.biCompression	= BI_RGB;
+    pvi->bmiHeader.biCompression	= CompressionFromPixelFormat(f_devres.m_pixel_format);
     pvi->bmiHeader.biBitCount		= f_devres.m_bits_per_pixel;
     pvi->bmiHeader.biSize			= sizeof(BITMAPINFOHEADER);
     pvi->bmiHeader.biWidth			= f_devres.m_width;
@@ -355,9 +402,9 @@ HRESULT CKCamStream::CheckMediaType(const CMediaType *pMediaType)
 		auto f_res = m_device->video_resolution(f_idx);
 
 		f_ok = (f_res.m_width == f_pvi->bmiHeader.biWidth &&
-			    f_res.m_height == f_pvi->bmiHeader.biHeight &&
+			    f_res.m_height == abs(f_pvi->bmiHeader.biHeight) &&
 			    f_res.m_bits_per_pixel == f_pvi->bmiHeader.biBitCount &&
-				f_pvi->bmiHeader.biCompression == BI_RGB);
+				CompressionFromPixelFormat(f_res.m_pixel_format) == f_pvi->bmiHeader.biCompression);
 	}
 
 	DbgLog((LOG_TRACE, 1, "... CheckMediaType (%s)", (f_ok) ? "OK" : "NOK"));
@@ -497,7 +544,7 @@ HRESULT STDMETHODCALLTYPE CKCamStream::GetStreamCaps(int iIndex, AM_MEDIA_TYPE *
 
 	auto f_devres = m_device->video_resolution(iIndex);
 
-    pvi->bmiHeader.biCompression = BI_RGB;
+    pvi->bmiHeader.biCompression = CompressionFromPixelFormat(f_devres.m_pixel_format);
     pvi->bmiHeader.biBitCount    = f_devres.m_bits_per_pixel;
     pvi->bmiHeader.biSize        = sizeof(BITMAPINFOHEADER);
     pvi->bmiHeader.biWidth       = f_devres.m_width;
@@ -510,7 +557,7 @@ HRESULT STDMETHODCALLTYPE CKCamStream::GetStreamCaps(int iIndex, AM_MEDIA_TYPE *
     SetRectEmpty(&(pvi->rcTarget)); // no particular destination rectangle
 
     (*pmt)->majortype				= MEDIATYPE_Video;
-    (*pmt)->subtype					= MediaSubTypeFromPixelSize(f_devres.m_bits_per_pixel);
+    (*pmt)->subtype					= MediaSubTypeFromPixelFormat(f_devres.m_pixel_format);
     (*pmt)->formattype				= FORMAT_VideoInfo;
     (*pmt)->bTemporalCompression	= FALSE;
     (*pmt)->bFixedSizeSamples		= FALSE;

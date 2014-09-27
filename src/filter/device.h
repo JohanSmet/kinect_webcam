@@ -21,12 +21,20 @@
 
 namespace device {
 
+enum DevicePixelFormat 
+{
+	DPF_RGB,
+	DPF_RGBA,
+	DPF_YUY2
+};
+
 struct DeviceVideoResolution
 {
-	int	m_width;
-	int m_height;
-	int m_bits_per_pixel;
-	int m_framerate;
+	int					m_width;
+	int					m_height;
+	int					m_bits_per_pixel;
+	int					m_framerate;
+	DevicePixelFormat	m_pixel_format;
 };
 
 struct Point2D {
@@ -49,6 +57,8 @@ class Device
 		virtual int					  video_resolution_preferred() = 0;
 		virtual int					  video_resolution_native() = 0;
 		virtual DeviceVideoResolution video_resolution(int p_index) = 0;
+		virtual void				  video_flip_output(bool p_flip) = 0;
+		virtual void				  video_set_resolution(DeviceVideoResolution p_devres) = 0;
 
 		// body tracking
 		virtual void				  focus_set_joint(int p_joint) = 0;
