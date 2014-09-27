@@ -14,6 +14,7 @@
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <qmessagebox.h>
 
 #include "ds_capture.h"
 #include "qt_utils.h"
@@ -133,12 +134,30 @@ void MainWindow::on_cbEnablePreview_stateChanged (int p_state)
 
 void MainWindow::on_btnRegister_clicked()
 {
-	register_com_dll(L"kinect_webcam.ax");
+	if (!register_com_dll(L"kinect_webcam.ax"))
+	{
+		QMessageBox::critical(this, tr("Kinect WebCam"),
+							  tr("An error occured while registering the Kinect WebCam Filter\nMake sure to run this application elevated for this operation to succeed."),
+							  QMessageBox::Ok, QMessageBox::NoButton);
+		return;
+	}
+
+	init_device();
+
+	if (m_device_ok && ui->cbEnablePreview->isChecked())
+	{
+		show_preview();
+	}
 }
 
 void MainWindow::on_btnUnregister_clicked()
 {
-	unregister_com_dll(L"kinect_webcam.ax");
+	if (!unregister_com_dll(L"kinect_webcam.ax"))
+	{
+		QMessageBox::critical(this, tr("Kinect WebCam"),
+							  tr("An error occured while unregistering the Kinect WebCam Filter\nMake sure to run this application elevated for this operation to succeed."),
+							  QMessageBox::Ok, QMessageBox::NoButton);
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -193,7 +212,12 @@ void MainWindow::init_device()
 			ui->selResolution->addItem(QString("%1: %2 x %3 x %4").arg(f_res.m_id).arg(f_res.m_width).arg(f_res.m_height).arg(f_res.m_bpp));
 		}
 
+		ui->lblKinectMsg->hide();
 		m_updating_ui = false;
+	}
+	else
+	{
+		ui->lblKinectMsg->setText("Unable to initialize the Kinect WebCam. Please make sure the filter is registered correctly.");
 	}
 }
 
