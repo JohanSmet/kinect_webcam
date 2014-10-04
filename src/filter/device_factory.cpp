@@ -16,6 +16,7 @@
 
 #include "device_kinect_v2.h"
 #include "device_kinect.h"
+#include "device_null.h"
 
 namespace device {
 
@@ -30,6 +31,10 @@ std::unique_ptr<class Device> device_factory(const std::string &p_type)
 	else if (p_type == "kinect_v2")
 	{
 		f_result = std::make_unique<DeviceKinectV2>();
+	}
+	else
+	{
+		f_result = std::make_unique<DeviceNull>();
 	}
 
 	return std::move(f_result);

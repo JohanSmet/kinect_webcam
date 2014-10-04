@@ -25,6 +25,8 @@
 #include "settings.h"
 #include "guid_filter.h"
 
+namespace {
+
 inline int FrameIntervalFromRate(int framesPerSecond)
 {
     return UNITS / framesPerSecond;
@@ -91,6 +93,16 @@ inline device::Point2D smooth_focus_update(device::Point2D p_focus)
 	return {f_result.m_x / f_count, f_result.m_y / f_count};
 }
 
+struct DeviceEnumeration
+{
+	char *	m_type;
+	bool	m_enabled;
+};
+
+
+} // unnamed namespace
+
+
 //////////////////////////////////////////////////////////////////////////
 //  CKCam is the source filter which masquerades as a capture device
 //////////////////////////////////////////////////////////////////////////
@@ -138,22 +150,23 @@ CKCamStream::CKCamStream(HRESULT *phr, CKCam *pParent, LPCWSTR pPinName) :
 	// try to load the settings
 	settings::load();
 
-	// try to connect to a kinect V2
-	if (!m_device && settings::KinectV2Enabled)
+	// try to initialize a device
+	DeviceEnumeration	f_devices[] = 
 	{
-		m_device = device::device_factory("kinect_v2");
-
-		if (!m_device->connect_to_first())
-			m_device = nullptr;
-	}
-
-	// fallback to an original kinect
-	if (!m_device && settings::KinectV1Enabled)
+		{"kinect_v2",	settings::KinectV2Enabled},
+		{"kinect",		settings::KinectV1Enabled},
+		{"null",		true}
+	};
+	
+	for (auto f_dev = std::begin(f_devices); m_device == nullptr && f_dev != std::end(f_devices); ++f_dev)
 	{
-		m_device = device::device_factory("kinect");
+		if (f_dev->m_enabled)
+		{
+			m_device = device::device_factory(f_dev->m_type);
 
-		if (!m_device->connect_to_first())
-			m_device = nullptr;
+			if (!m_device->connect_to_first())
+				m_device = nullptr;
+		}
 	}
 
 	// store the default media type
