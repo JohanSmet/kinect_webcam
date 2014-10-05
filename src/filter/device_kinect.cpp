@@ -34,6 +34,9 @@ struct DeviceKinectPrivate
 	int					m_color_width;
 	int					m_color_height;
 	std::vector<BYTE>	m_color_data;
+	DevicePixelFormat	m_color_format;
+	bool				m_flip_output;
+	bool				m_high_res;
 
 	int					m_focus_joint;
 	bool				m_focus_available;
@@ -48,6 +51,7 @@ DeviceKinect::DeviceKinect() :	m_private(std::make_unique<DeviceKinectPrivate>()
 {
 	m_private->m_sensor				= nullptr;
 	m_private->m_sensor_data_event	= INVALID_HANDLE_VALUE;
+	m_private->m_flip_output		= false;
 }
 
 DeviceKinect::~DeviceKinect()
@@ -108,17 +112,7 @@ bool DeviceKinect::connect_to_first()
 		if (SUCCEEDED(f_result))
         {
 			// enable the color stream
-			f_result = m_private->m_sensor->NuiImageStreamOpen(
-													NUI_IMAGE_TYPE_COLOR,
-													NUI_IMAGE_RESOLUTION_640x480,
-													0,
-													2,
-													m_private->m_sensor_data_event,
-													&m_private->m_sensor_color_stream);
-
-			m_private->m_color_width  = 640;
-			m_private->m_color_height = 480;
-			m_private->m_color_data.resize(640 * 480 * 4);
+			init_color_stream(m_private->m_color_format, m_private->m_high_res);
 		}
 
 		if (SUCCEEDED(f_result))
@@ -171,8 +165,10 @@ bool DeviceKinect::disconnect()
 
 DeviceVideoResolution DeviceKinect::m_video_resolutions[] = {	{ 320,  240, 32, 30, DPF_RGBA},
 																{ 640,  480, 32, 30, DPF_RGBA},
+																{1280,  960, 32, 12, DPF_RGBA},
 																{ 320,  240, 24, 30, DPF_RGB},
 																{ 640,  480, 24, 30, DPF_RGB},
+																{ 640,  480, 16, 15, DPF_YUY2}
 															};
 
 int	DeviceKinect::video_resolution_count()
@@ -197,10 +193,13 @@ DeviceVideoResolution DeviceKinect::video_resolution(int p_index)
 
 void DeviceKinect::video_set_resolution(DeviceVideoResolution p_devres)
 {
+	m_private->m_high_res	  = (p_devres.m_width > 640);
+	m_private->m_color_format = p_devres.m_pixel_format;
 }
 
 void DeviceKinect::video_flip_output(bool p_flip)
 {
+	m_private->m_flip_output = p_flip;
 }
 
 //
@@ -272,17 +271,60 @@ bool DeviceKinect::color_data(int p_hor_focus, int p_ver_focus, int p_width, int
 	switch (p_bpp)
 	{	
 		case 32 :
-			return img::copy_region_32bpp_32bpp(m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(),
-												f_hor_offset, f_ver_offset, p_width, p_height, p_data);
+			if (m_private->m_flip_output)
+				return img::copy_region_32bpp_32bpp_flipped(m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(),
+															f_hor_offset, f_ver_offset, p_width, p_height, p_data);
+			else
+				return img::copy_region_32bpp_32bpp(m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(),
+													f_hor_offset, f_ver_offset, p_width, p_height, p_data);
 				
 		case 24 :
-			return img::copy_region_32bpp_24bpp(m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(),
-												f_hor_offset, f_ver_offset, p_width, p_height, p_data);
+			if (m_private->m_flip_output)
+				return img::copy_region_32bpp_24bpp_flipped(m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(),
+															f_hor_offset, f_ver_offset, p_width, p_height, p_data);
+			else
+				return img::copy_region_32bpp_24bpp(m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(),
+													f_hor_offset, f_ver_offset, p_width, p_height, p_data);
 	
 		default :
 			return false;
 	}
 
+}
+
+bool DeviceKinect::init_color_stream(DevicePixelFormat p_format, bool p_high_res)
+{
+	HRESULT					f_result = S_OK;
+	NUI_IMAGE_TYPE			f_img_type = NUI_IMAGE_TYPE_COLOR;
+	NUI_IMAGE_RESOLUTION	f_img_res  = NUI_IMAGE_RESOLUTION_640x480;
+
+	m_private->m_color_width  = 640;
+	m_private->m_color_height = 480;
+	int f_bytes				  = 4;
+
+	if (p_format == DPF_YUY2)
+	{
+		f_img_type = NUI_IMAGE_TYPE_COLOR_RAW_YUV;
+		f_bytes    = 2;
+	}
+	else if (p_high_res)
+	{
+		f_img_res  = NUI_IMAGE_RESOLUTION_1280x960;
+		m_private->m_color_width  = 1280;
+		m_private->m_color_height = 960;
+	}
+
+	if (m_private->m_sensor)
+	{
+		f_result = m_private->m_sensor->NuiImageStreamOpen(	f_img_type, f_img_res,
+															0, 2,
+															m_private->m_sensor_data_event,
+															&m_private->m_sensor_color_stream);
+
+		m_private->m_color_data.resize(m_private->m_color_width * m_private->m_color_height * f_bytes);
+	}
+
+	return SUCCEEDED (f_result);
 }
 
 bool DeviceKinect::read_color_frame()

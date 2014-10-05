@@ -63,6 +63,7 @@ class DeviceKinect : public Device
 
 	// helper function
 	private :
+		bool init_color_stream(DevicePixelFormat p_format, bool p_high_res);
 		bool read_color_frame();
 		bool read_skeleton_frame();
 
