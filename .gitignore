@@ -44,3 +44,4 @@ Icon
 *.md~
 
 *.cmake~
+/build_x64
