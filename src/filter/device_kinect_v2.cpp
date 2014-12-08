@@ -124,26 +124,31 @@ bool DeviceKinectV2::connect_to_first()
 		return false;
 	}
 
-	// is the sensor available ?
-	//	note : right now (june beta sdk) it won't actually detect if a device is connected 
-	//		   just that the kinect service is running or not -- still beter then nothing
-	//	hmmm - aparantly get_IsAvailable always returns false ...
-/*	if (SUCCEEDED(f_result))
-	{
-		BOOLEAN	f_available;
-
-		f_result = m_private->m_sensor->get_IsAvailable(&f_available);
-		if (FAILED(f_result) || !f_available)
-		{
-			f_result = E_FAIL;
-		}
-	}
-*/
-
 	// initialize the kinect
 	if (SUCCEEDED(f_result))
 	{
 		f_result = m_private->m_sensor->Open();
+	}
+
+	// wait for the sensor to become available (300ms was quoted by ms on the kinect forum, but gave unreliable results on my machine)
+	if (SUCCEEDED(f_result))
+	{
+		WAITABLE_HANDLE	f_sensor_waitable = 0;	
+		m_private->m_sensor->SubscribeIsAvailableChanged(&f_sensor_waitable);
+
+		if (WaitForSingleObject(reinterpret_cast<HANDLE> (f_sensor_waitable), 1000) != WAIT_OBJECT_0)
+			f_result = E_ABORT;
+
+		if (SUCCEEDED(f_result))
+		{
+			BOOLEAN		f_available = false;
+			f_result = m_private->m_sensor->get_IsAvailable(&f_available);
+
+			if (SUCCEEDED(f_result) && !f_available)
+				f_result = E_ABORT;
+		}
+
+		m_private->m_sensor->UnsubscribeIsAvailableChanged(f_sensor_waitable);
 	}
 	
 	// obtain a color reader (seperate because framerate may vary)
@@ -196,7 +201,7 @@ bool DeviceKinectV2::connect_to_first()
 	{
 		f_result = m_private->m_sensor->get_CoordinateMapper(&m_private->m_sensor_coordinate_mapper);
 	}
-
+	
 	// release resources if something failed
 	if (FAILED(f_result))
 	{
