@@ -1,11 +1,12 @@
 KinectWebcam v0.1
 =================
-A DirectShow capture filter that a Kinect v2 into a webcam.
+A DirectShow capture filter that turns a Kinect v2 into a webcam.
 
 Features
 ========
 - supports the Kinect v2 and the original Kinect
-- rudimentary head-tracking on Kinect v2
+- head-tracking 
+- green screen (basic - more a gimmick than a feature)
 - 32bit and 64bit support
 - tested with: - Flash on Firefox, Chrome, and WaterFox (64-bit)
                - GraphStudioNext (32-bit and 64-bit)
@@ -13,18 +14,10 @@ Features
 - Kinect v2 requires Windows 8+, original Kinect should work on older
   OS-versions (not tested yet).
 
-Missing features (for now)
-==========================
-- Head/Body tracking (on Kinect V1)
-- 'green screen' support
-- customizable settings and a nice UI to change these
-
 Known Issues
 ============
 - doesn't work with IE and Skype
 	These only seem to detect WDM-drivers, not software DirectShow filter. TBI.
-- not optimised at all (e.g. naive 32bit -> 24bit colorspace conversion)
-- detecting if Kinect v2 is available is currently broken
 
 Binaries
 ========
@@ -40,6 +33,7 @@ Requirements :
 - CMake
 - The Microsoft DirectShow Base Classes (strmbase)
   http://msdn.microsoft.com/en-us/library/windows/desktop/dd407279%28v=vs.85%29.aspx
+- OpenCV (http://opencv.org/)
 - The Kinect v2 SDK (usually the latest version)
 - The Kinect SDK (v1.8)
 
@@ -51,12 +45,3 @@ source directory or http://opensource.org/licenses/MIT for more details.
 Contact
 =======
 Maintainer : Johan Smet <johan.smet@justcode.be>
-
-Version History
-===============
-2014-07-30
-- rudimentary head tracking (only on Kinect V2 for now)
-2014-07-21
-- initial release to github
-
-
