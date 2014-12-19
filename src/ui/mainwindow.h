@@ -37,6 +37,7 @@ class MainWindow : public QMainWindow
 		void on_cbKinectV1_stateChanged (int p_state);
 		void on_selTrackingJoint_currentIndexChanged (int p_index);
 		void on_cbEnablePreview_stateChanged (int p_state);
+		void on_cbGreenScreen_stateChanged (int p_state);
 
 		void on_btnRegister_clicked();
 		void on_btnUnregister_clicked();

@@ -56,6 +56,9 @@ class DeviceKinectV2 : public Device
 		virtual bool				  focus_availabe();
 		virtual Point2D				  focus_point();
 
+		// green screen
+		virtual void				  green_screen_enable(bool p_enable);
+
 		// update
 		virtual bool update();
 
@@ -67,8 +70,10 @@ class DeviceKinectV2 : public Device
 		bool read_color_frame();
 		bool read_body_index_frame(IMultiSourceFrame *p_multi_source_frame);
 		bool read_body_frame(IMultiSourceFrame *p_multi_source_frame);
+		bool read_depth_frame(IMultiSourceFrame *p_multi_source_frame);
 
 		bool copy_index_buffer(int p_dst_x, int p_dst_y, int p_dst_width, int p_dst_height, unsigned char *p_dst_data);
+		bool build_index_mask();
 
 	// member variables
 	public :

@@ -113,6 +113,14 @@ Point2D	DeviceNull::focus_point()
 }
 
 //
+// green screen
+//
+
+void DeviceNull::green_screen_enable(bool p_enable)
+{
+}
+
+//
 // update detected data
 //
 

@@ -15,107 +15,118 @@
 #include "image.h"
 #include <memory>
 
+#include <opencv2/opencv.hpp>
+
 namespace img {
 
 bool copy_region_32bpp_32bpp(int p_src_width, int p_src_height, unsigned char *p_src_data,
-							 int p_dst_x, int p_dst_y, int p_dst_width, int p_dst_height, unsigned char *p_dst_data)
+							 int p_dst_x, int p_dst_y, int p_dst_width, int p_dst_height, unsigned char *p_dst_data,
+							 bool p_flip)
 {
-	const int	f_pixel_size	= 4;
-	int			f_line_size		= p_dst_width * f_pixel_size;
-	int			f_line_stride	= p_src_width * f_pixel_size;
-	const auto *f_src_start		= p_src_data + (p_dst_x * f_pixel_size) + (p_dst_y * f_line_stride);
-	const auto *f_dst_end		= p_dst_data + (f_line_size * p_dst_height);
+	cv::Mat f_src(p_src_height, p_src_width, CV_8UC4, p_src_data);
+	cv::Mat f_dst(p_dst_height, p_dst_width, CV_8UC4, p_dst_data);
 
-	// swap the picture vertically
-	for (const auto *f_src_line = p_src_data + (p_dst_x * f_pixel_size) + (p_dst_y * f_line_stride);
-		 p_dst_data < f_dst_end;
-		 f_src_line += f_line_stride, p_dst_data += f_line_size)
+	// cropping
+	cv::Mat f_src_cropped(f_src, cv::Rect(p_dst_x, p_dst_y, p_dst_width, p_dst_height));
+
+	// copy to output (flipped or not)
+	if (p_flip)
+		cv::flip(f_src_cropped, f_dst, 0);
+	else
+		f_src_cropped.copyTo(f_dst);
+	
+	return true;
+}
+
+bool copy_region_32bpp_32bpp_mask(	int p_src_width, int p_src_height, unsigned char *p_src_data, unsigned char *p_mask_channel,
+									int p_dst_x, int p_dst_y, int p_dst_width, int p_dst_height, unsigned char *p_dst_data,
+									bool p_flip)
+{
+	cv::Mat f_src(p_src_height, p_src_width, CV_8UC4, p_src_data);
+	cv::Mat f_dst(p_dst_height, p_dst_width, CV_8UC4, p_dst_data);
+	cv::Mat f_msk(p_src_height, p_src_width, CV_8UC1, p_mask_channel);
+
+	// cropping
+	cv::Mat f_src_cropped(f_src, cv::Rect(p_dst_x, p_dst_y, p_dst_width, p_dst_height));
+	cv::Mat f_msk_cropped(f_msk, cv::Rect(p_dst_x, p_dst_y, p_dst_width, p_dst_height));
+
+	if (p_flip)
 	{
-		memcpy(p_dst_data, f_src_line, f_line_size);
+		// mask to a new matrix
+		cv::Mat f_masked;
+		f_src_cropped.copyTo(f_masked, f_msk_cropped);
+
+		// flip and copy masked temporary to destination
+		cv::flip(f_masked, f_dst, 0);
+	}
+	else
+	{
+		// mask to the destination
+		f_src_cropped.copyTo(f_dst, f_msk_cropped);
 	}
 	
 	return true;
 }
 
-bool copy_region_32bpp_32bpp_flipped(int p_src_width, int p_src_height, unsigned char *p_src_data,
-									 int p_dst_x, int p_dst_y, int p_dst_width, int p_dst_height, unsigned char *p_dst_data)
-{
-	const int	f_pixel_size	= 4;
-	int			f_line_size		= p_dst_width * f_pixel_size;
-	int			f_line_stride	= p_src_width * f_pixel_size;
-	const auto *f_src_start		= p_src_data + (p_dst_x * f_pixel_size) + (p_dst_y * f_line_stride);
-
-	// swap the picture vertically
-	for (const auto *f_src_line = f_src_start + (f_line_stride * (p_dst_height - 1));	// start of the last line
-		 f_src_line >= f_src_start;
-		 f_src_line -= f_line_stride, p_dst_data += f_line_size)
-	{
-		memcpy(p_dst_data, f_src_line, f_line_size);
-	}
-	
-	return true;
-}
 bool copy_region_32bpp_24bpp(int p_src_width, int p_src_height, unsigned char *p_src_data,
-							 int p_dst_x, int p_dst_y, int p_dst_width, int p_dst_height, unsigned char *p_dst_data)
+							 int p_dst_x, int p_dst_y, int p_dst_width, int p_dst_height, unsigned char *p_dst_data,
+							 bool p_flip)
 {
-	// XXX some optimization of this routine wouldn't be a bad idea ;-)
-	const int	f_s_pixel_size	= 4;
-	const int	f_d_pixel_size	= 3;
-	const int	f_d_line_size	= p_dst_width * f_d_pixel_size;
-	const int	f_s_line_stride	= p_src_width * f_s_pixel_size;
+	cv::Mat f_src(p_src_height, p_src_width, CV_8UC4, p_src_data);
+	cv::Mat f_dst(p_dst_height, p_dst_width, CV_8UC3, p_dst_data);
 
-	const auto *f_dst_end		= p_dst_data + (f_d_line_size * p_dst_height);
+	// cropping
+	cv::Mat f_src_cropped(f_src, cv::Rect(p_dst_x, p_dst_y, p_dst_width, p_dst_height));
 
-	// swap the picture vertically
-	for (const auto *f_src_line = p_src_data + (p_dst_x * f_s_pixel_size) + (p_dst_y * f_s_line_stride);
-		 p_dst_data < f_dst_end;
-		 f_src_line += f_s_line_stride, p_dst_data += f_d_line_size)
-	{
-		auto *f_src = f_src_line;
-		auto *f_dst = p_dst_data;
+	// color space conversion
+	cv::Mat f_src_rgb;
 
-		for (int f_w = 0; f_w < p_dst_width; ++f_w)
-		{
-			*f_dst++ = *f_src++;
-			*f_dst++ = *f_src++;
-			*f_dst++ = *f_src++;
-			++f_src;
-		}
-	}
+	cv::cvtColor(f_src_cropped, f_src_rgb, cv::COLOR_RGBA2RGB);
+
+	// copy to output (flipped or not)
+	if (p_flip)
+		cv::flip(f_src_rgb, f_dst, 0);
+	else
+		f_src_rgb.copyTo(f_dst);
 
 	return true;
 }
 
-bool copy_region_32bpp_24bpp_flipped(int p_src_width, int p_src_height, unsigned char *p_src_data,
-									 int p_dst_x, int p_dst_y, int p_dst_width, int p_dst_height, unsigned char *p_dst_data)
+bool copy_region_32bpp_24bpp_mask(	int p_src_width, int p_src_height, unsigned char *p_src_data, unsigned char *p_mask_channel,
+									int p_dst_x, int p_dst_y, int p_dst_width, int p_dst_height, unsigned char *p_dst_data,
+									bool p_flip)
 {
-	// XXX some optimization of this routine wouldn't be a bad idea ;-)
-	const int	f_s_pixel_size	= 4;
-	const int	f_d_pixel_size	= 3;
-	const int	f_d_line_size	= p_dst_width * f_d_pixel_size;
-	const int	f_s_line_stride	= p_src_width * f_s_pixel_size;
+	cv::Mat f_src(p_src_height, p_src_width, CV_8UC4, p_src_data);
+	cv::Mat f_dst(p_dst_height, p_dst_width, CV_8UC4, p_dst_data);
+	cv::Mat f_msk(p_src_height, p_src_width, CV_8UC1, p_mask_channel);
 
-	const auto *f_src_start		= p_src_data + (p_dst_x * f_s_pixel_size) + (p_dst_y * f_s_line_stride);
+	// cropping
+	cv::Mat f_src_cropped(f_src, cv::Rect(p_dst_x, p_dst_y, p_dst_width, p_dst_height));
+	cv::Mat f_msk_cropped(f_msk, cv::Rect(p_dst_x, p_dst_y, p_dst_width, p_dst_height));
 
-	// swap the picture vertically
-	for (const auto *f_src_line = f_src_start + (f_s_line_stride * (p_dst_height - 1));	// start of the last line
-		 f_src_line >= f_src_start;
-		 f_src_line -= f_s_line_stride, p_dst_data += f_d_line_size)
+	// color space conversion
+	cv::Mat f_src_rgb;
+
+	cv::cvtColor(f_src_cropped, f_src_rgb, cv::COLOR_RGBA2RGB);
+
+	if (p_flip)
 	{
-		auto *f_src = f_src_line;
-		auto *f_dst = p_dst_data;
+		// mask to a new matrix
+		cv::Mat f_masked;
+		f_src_rgb.copyTo(f_masked, f_msk_cropped);
 
-		for (int f_w = 0; f_w < p_dst_width; ++f_w)
-		{
-			*f_dst++ = *f_src++;
-			*f_dst++ = *f_src++;
-			*f_dst++ = *f_src++;
-			++f_src;
-		}
+		// flip and copy masked temporary to destination
+		cv::flip(f_masked, f_dst, 0);
 	}
-
+	else
+	{
+		// mask to the destination
+		f_src_rgb.copyTo(f_dst, f_msk_cropped);
+	}
+	
 	return true;
 }
+
 
 bool copy_region_yuy2(int p_src_width, int p_src_height, unsigned char *p_src_data,
 					  int p_dst_x, int p_dst_y, int p_dst_width, int p_dst_height, unsigned char *p_dst_data)

@@ -3,6 +3,7 @@ build/
 
 # external dependencies
 strmbase/
+opencv/
 
 # Windows image file caches
 Thumbs.db

@@ -223,6 +223,13 @@ Point2D	DeviceKinect::focus_point()
 	return m_private->m_focus;
 }
 
+//
+// green screen
+//
+
+void DeviceKinect::green_screen_enable(bool p_enable)
+{
+}
 
 //
 // update detected data
@@ -271,20 +278,14 @@ bool DeviceKinect::color_data(int p_hor_focus, int p_ver_focus, int p_width, int
 	switch (p_bpp)
 	{	
 		case 32 :
-			if (m_private->m_flip_output)
-				return img::copy_region_32bpp_32bpp_flipped(m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(),
-															f_hor_offset, f_ver_offset, p_width, p_height, p_data);
-			else
-				return img::copy_region_32bpp_32bpp(m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(),
-													f_hor_offset, f_ver_offset, p_width, p_height, p_data);
+			return img::copy_region_32bpp_32bpp(m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(),
+												f_hor_offset, f_ver_offset, p_width, p_height, p_data,
+												m_private->m_flip_output);
 				
 		case 24 :
-			if (m_private->m_flip_output)
-				return img::copy_region_32bpp_24bpp_flipped(m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(),
-															f_hor_offset, f_ver_offset, p_width, p_height, p_data);
-			else
-				return img::copy_region_32bpp_24bpp(m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(),
-													f_hor_offset, f_ver_offset, p_width, p_height, p_data);
+			return img::copy_region_32bpp_24bpp(m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(),
+												f_hor_offset, f_ver_offset, p_width, p_height, p_data,
+												m_private->m_flip_output);
 	
 		default :
 			return false;

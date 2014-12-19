@@ -65,6 +65,9 @@ class Device
 		virtual bool				  focus_availabe() = 0;
 		virtual Point2D				  focus_point() = 0;
 
+		// green screen
+		virtual void				  green_screen_enable(bool p_enable) = 0;
+
 		// update
 		virtual bool update() = 0;
 		

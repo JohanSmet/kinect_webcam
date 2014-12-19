@@ -18,16 +18,20 @@
 namespace img {
 
 bool copy_region_32bpp_32bpp(int p_src_width, int p_src_height, unsigned char *p_src_data,
-							 int p_dst_x, int p_dst_y, int p_dst_width, int p_dst_height, unsigned char *p_dst_data);
+							 int p_dst_x, int p_dst_y, int p_dst_width, int p_dst_height, unsigned char *p_dst_data,
+							 bool p_flip = false);
 
-bool copy_region_32bpp_32bpp_flipped(int p_src_width, int p_src_height, unsigned char *p_src_data,
-							 int p_dst_x, int p_dst_y, int p_dst_width, int p_dst_height, unsigned char *p_dst_data);
-
-bool copy_region_32bpp_24bpp_flipped(int p_src_width, int p_src_height, unsigned char *p_src_data,
-							 int p_dst_x, int p_dst_y, int p_dst_width, int p_dst_height, unsigned char *p_dst_data);
+bool copy_region_32bpp_32bpp_mask(	int p_src_width, int p_src_height, unsigned char *p_src_data, unsigned char *p_mask_channel,
+									int p_dst_x, int p_dst_y, int p_dst_width, int p_dst_height, unsigned char *p_dst_data,
+									bool p_flip = false);
 
 bool copy_region_32bpp_24bpp(int p_src_width, int p_src_height, unsigned char *p_src_data,
-							 int p_dst_x, int p_dst_y, int p_dst_width, int p_dst_height, unsigned char *p_dst_data);
+							 int p_dst_x, int p_dst_y, int p_dst_width, int p_dst_height, unsigned char *p_dst_data,
+							 bool p_flip = false);
+
+bool copy_region_32bpp_24bpp_mask(	int p_src_width, int p_src_height, unsigned char *p_src_data, unsigned char *p_mask_channel,
+									int p_dst_x, int p_dst_y, int p_dst_width, int p_dst_height, unsigned char *p_dst_data,
+									bool p_flip = false);
 
 bool copy_region_yuy2(int p_src_width, int p_src_height, unsigned char *p_src_data,
 					  int p_dst_x, int p_dst_y, int p_dst_width, int p_dst_height, unsigned char *p_dst_data);

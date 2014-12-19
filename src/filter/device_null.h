@@ -54,6 +54,9 @@ class DeviceNull : public Device
 		virtual bool					focus_availabe();
 		virtual Point2D					focus_point();
 
+		// green screen
+		virtual void				  green_screen_enable(bool p_enable);
+
 		// update
 		virtual bool update();
 

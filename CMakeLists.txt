@@ -26,6 +26,8 @@ set(CMAKE_RELEASE_POSTFIX "")
 set(CMAKE_SHARED_LIBRARY_SUFFIX ".ax")
 
 include (cmake/build_strmbase.cmake)
+include (cmake/build_opencv.cmake)
+
 add_subdirectory(src/filter)
 add_subdirectory(src/ui)
 

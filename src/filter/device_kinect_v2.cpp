@@ -27,27 +27,32 @@ namespace device {
 
 struct DeviceKinectV2Private 
 {
-	IKinectSensor *				m_sensor;
-	IColorFrameReader *			m_sensor_color_reader;
-	IMultiSourceFrameReader	*	m_sensor_multi_reader;
-	ICoordinateMapper *			m_sensor_coordinate_mapper;
+	IKinectSensor *					m_sensor;
+	IColorFrameReader *				m_sensor_color_reader;
+	IMultiSourceFrameReader	*		m_sensor_multi_reader;
+	ICoordinateMapper *				m_sensor_coordinate_mapper;
 
-	int							m_color_width;
-	int							m_color_height;
-	std::vector<BYTE>			m_color_data;
-	DevicePixelFormat			m_color_format;
-	bool						m_flip_output;
+	int								m_color_width;
+	int								m_color_height;
+	std::vector<BYTE>				m_color_data;
+	DevicePixelFormat				m_color_format;
 
-	int							m_depth_width;
-	int							m_depth_height;
-	std::vector<BYTE>			m_depth_data;
-	std::vector<BYTE>			m_body_index_data;
+	bool							m_flip_output;
+	bool							m_green_screen;
 
-	static const int			MAX_BODIES = 6;
-	IBody *						m_kinect_bodies[MAX_BODIES];
-	int							m_focus_joint;
-	bool						m_focus_available;
-	Point2D						m_focus;
+	int								m_depth_width;
+	int								m_depth_height;
+	std::vector<UINT16>				m_depth_data;
+	std::vector<BYTE>				m_body_index_data;
+
+	std::vector<DepthSpacePoint>	m_depth_points;
+	std::vector<unsigned char>		m_body_mask;
+
+	static const int				MAX_BODIES = 6;
+	IBody *							m_kinect_bodies[MAX_BODIES];
+	int								m_focus_joint;
+	bool							m_focus_available;
+	Point2D							m_focus;
 };
 
 HRESULT kinectv2_init_color_image(IColorFrameSource *p_source, DeviceKinectV2Private *p_private)
@@ -84,6 +89,13 @@ HRESULT kinectv2_init_depth_image(IDepthFrameSource *p_source, DeviceKinectV2Pri
 	return f_result;
 }
 
+HRESULT kinectv2_init_mask(DeviceKinectV2Private *p_private)
+{
+	p_private->m_depth_points.resize(p_private->m_color_width * p_private->m_color_height);
+	p_private->m_body_mask.resize(p_private->m_color_width * p_private->m_color_height);
+
+	return S_OK;
+}
 
 //
 // construction
@@ -97,6 +109,7 @@ DeviceKinectV2::DeviceKinectV2() :	m_private(std::make_unique<DeviceKinectV2Priv
 	m_private->m_sensor_coordinate_mapper	= nullptr;
 	m_private->m_color_format				= DPF_RGBA;
 	m_private->m_flip_output				= true;
+	m_private->m_green_screen				= false;
 }
 
 DeviceKinectV2::~DeviceKinectV2()
@@ -172,7 +185,7 @@ bool DeviceKinectV2::connect_to_first()
 	// obtain a multisource-reader for the other sources
 	if (SUCCEEDED(f_result))
 	{
-		f_result = m_private->m_sensor->OpenMultiSourceFrameReader(	FrameSourceTypes_BodyIndex | FrameSourceTypes_Body,
+		f_result = m_private->m_sensor->OpenMultiSourceFrameReader(	FrameSourceTypes_BodyIndex | FrameSourceTypes_Body | FrameSourceTypes_Depth,
 																	&m_private->m_sensor_multi_reader);
 	}
 
@@ -194,6 +207,11 @@ bool DeviceKinectV2::connect_to_first()
 	{
 		// dimensions are the same as the depth buffer
 		m_private->m_body_index_data.resize(m_private->m_depth_width * m_private->m_depth_height);
+
+		if (SUCCEEDED(f_result))
+		{
+			f_result = kinectv2_init_mask(m_private.get());
+		}
 	}
 
 	// obtain a coordinate mapper
@@ -304,6 +322,15 @@ Point2D	DeviceKinectV2::focus_point()
 }
 
 //
+// green screen
+//
+
+void DeviceKinectV2::green_screen_enable(bool p_enable)
+{
+	m_private->m_green_screen = p_enable;
+}
+
+//
 // update detected data
 //
 
@@ -323,6 +350,7 @@ bool DeviceKinectV2::update()
 	{ 
 		f_new_data |= read_body_index_frame(f_multi_frame.get());
 		f_new_data |= read_body_frame(f_multi_frame.get());
+		f_new_data |= read_depth_frame(f_multi_frame.get());
 	}
 
 	return f_new_data;
@@ -351,23 +379,29 @@ bool DeviceKinectV2::color_data(int p_hor_focus, int p_ver_focus, int p_width, i
 	int f_ver_offset = p_ver_focus - (p_height / 2);
 	f_ver_offset	 = min(max(f_ver_offset, 0), m_private->m_color_height - p_height);
 
+	if (m_private->m_green_screen)
+		build_index_mask();
+
 	switch (m_private->m_color_format)
 	{	
 		case DPF_RGBA :
-			if (m_private->m_flip_output)
-				return img::copy_region_32bpp_32bpp_flipped(m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(),
-															f_hor_offset, f_ver_offset, p_width, p_height, p_data);
-				
-			else
+			if (m_private->m_green_screen)
+				return img::copy_region_32bpp_32bpp_mask(	m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(), m_private->m_body_mask.data(),
+															f_hor_offset, f_ver_offset, p_width, p_height, p_data,
+															m_private->m_flip_output);
+			else 
 				return img::copy_region_32bpp_32bpp(m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(),
-													f_hor_offset, f_ver_offset, p_width, p_height, p_data);
+													f_hor_offset, f_ver_offset, p_width, p_height, p_data,
+													m_private->m_flip_output);
 		case DPF_RGB :
-			if (m_private->m_flip_output)
-				return img::copy_region_32bpp_24bpp_flipped(m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(),
-															f_hor_offset, f_ver_offset, p_width, p_height, p_data);
+			if (m_private->m_green_screen)
+				return img::copy_region_32bpp_24bpp_mask(	m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(), m_private->m_body_mask.data(),
+															f_hor_offset, f_ver_offset, p_width, p_height, p_data,
+															m_private->m_flip_output);
 			else
 				return img::copy_region_32bpp_24bpp(m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(),
-													f_hor_offset, f_ver_offset, p_width, p_height, p_data);
+													f_hor_offset, f_ver_offset, p_width, p_height, p_data,
+													m_private->m_flip_output);
 
 		case DPF_YUY2 :
 			return img::copy_region_yuy2(	m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(),
@@ -485,6 +519,30 @@ bool DeviceKinectV2::read_body_frame(IMultiSourceFrame *p_multi_source_frame)
 	return SUCCEEDED(f_result);
 }
 
+bool DeviceKinectV2::read_depth_frame(IMultiSourceFrame *p_multi_source_frame)
+{
+	com_safe_ptr_t<IDepthFrameReference> f_frame_ref = nullptr;
+	com_safe_ptr_t<IDepthFrame>			 f_frame = nullptr;
+
+	if (!p_multi_source_frame)
+		return false;
+
+	// try to read the next frame
+	auto f_result = p_multi_source_frame->get_DepthFrameReference(&f_frame_ref);
+
+	if (SUCCEEDED(f_result))
+	{	
+		f_result = f_frame_ref->AcquireFrame(&f_frame);
+	}
+
+	if (SUCCEEDED(f_result))
+	{
+		f_result = f_frame->CopyFrameDataToArray(static_cast<UINT> (m_private->m_body_index_data.size()), reinterpret_cast<UINT16 *> (m_private->m_depth_data.data()));
+	}
+
+	return SUCCEEDED(f_result);
+}
+
 bool DeviceKinectV2::copy_index_buffer(int p_dst_x, int p_dst_y, int p_dst_width, int p_dst_height, unsigned char *p_dst_data)
 {
 	const int	f_s_pixel_size	= 1;
@@ -516,6 +574,29 @@ bool DeviceKinectV2::copy_index_buffer(int p_dst_x, int p_dst_y, int p_dst_width
 		}
 	}
 
+	return true;
+}
+
+bool DeviceKinectV2::build_index_mask()
+{
+	HRESULT f_result = m_private->m_sensor_coordinate_mapper->MapColorFrameToDepthSpace( m_private->m_depth_width * m_private->m_depth_height,
+																						 m_private->m_depth_data.data(),
+																						 m_private->m_color_width * m_private->m_color_height,
+																						 m_private->m_depth_points.data());
+
+	if (FAILED (f_result))
+		return false;
+	
+	std::fill(std::begin(m_private->m_body_mask), std::end(m_private->m_body_mask), 0);
+	unsigned char *f_mask = m_private->m_body_mask.data();
+
+	for (unsigned int f_idx = 0; f_idx < m_private->m_depth_points.size(); ++f_idx)
+	{
+		int f_depth_idx = (static_cast<int>(m_private->m_depth_points[f_idx].Y) * m_private->m_depth_width) + static_cast<int> (m_private->m_depth_points[f_idx].X);
+		
+		if (f_depth_idx >= 0 && static_cast<unsigned int> (f_depth_idx) < m_private->m_depth_data.size() && m_private->m_body_index_data[f_depth_idx] != 0xff)
+			f_mask[f_idx] = 0xff;
+	}
 
 	return true;
 }

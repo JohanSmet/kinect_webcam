@@ -118,6 +118,12 @@ void MainWindow::on_cbKinectV1_stateChanged (int p_state)
 		ui_to_settings();
 }
 
+void MainWindow::on_cbGreenScreen_stateChanged (int p_state)
+{
+	if (ui->cbGreenScreen->isChecked() != settings::GreenScreenEnabled)
+		ui_to_settings();
+}
+
 void MainWindow::on_selTrackingJoint_currentIndexChanged (int p_index)
 {
 	if (p_index != settings::TrackingJoint)
@@ -173,6 +179,9 @@ void MainWindow::ui_from_settings()
 	ui->cbTracking->setChecked(settings::TrackingEnabled);
 	ui->selTrackingJoint->setCurrentIndex(settings::TrackingJoint);
 
+	// effects - green screen
+	ui->cbGreenScreen->setChecked(settings::GreenScreenEnabled);
+
 	// advanced - devices
 	ui->cbKinectV2->setChecked(settings::KinectV2Enabled);
 	ui->cbKinectV1->setChecked(settings::KinectV1Enabled);
@@ -188,6 +197,9 @@ void MainWindow::ui_to_settings()
 	// effects - tracking
 	settings::TrackingEnabled = ui->cbTracking->isChecked();
 	settings::TrackingJoint	  = ui->selTrackingJoint->currentIndex();
+
+	// effects - green screen
+	settings::GreenScreenEnabled = ui->cbGreenScreen->isChecked();
 
 	// advanced - devices
 	settings::KinectV2Enabled = ui->cbKinectV2->isChecked();

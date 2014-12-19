@@ -279,6 +279,7 @@ HRESULT CKCamStream::FillBuffer(IMediaSample *pms)
 		settings::load();
 
 	m_device->focus_set_joint(settings::TrackingJoint);
+	m_device->green_screen_enable(settings::GreenScreenEnabled);
 
 	// let the device update itself
 	m_device->update();

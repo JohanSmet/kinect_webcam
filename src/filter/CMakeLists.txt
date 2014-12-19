@@ -52,7 +52,8 @@ include_directories(${KINECT_V1_INC}
 add_library(kinect_webcam SHARED ${Sources})
 target_link_libraries(kinect_webcam strmbase
 									${KINECT_V1_LIBS}
-									${KINECT_V2_LIBS})
+									${KINECT_V2_LIBS}
+									opencv_core opencv_imgproc)
 set_property (TARGET kinect_webcam APPEND PROPERTY COMPILE_DEFINITIONS UNICODE _UNICODE)							
 
 add_custom_command(TARGET kinect_webcam POST_BUILD 
