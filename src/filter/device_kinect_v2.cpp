@@ -53,6 +53,8 @@ struct DeviceKinectV2Private
 	int								m_focus_joint;
 	bool							m_focus_available;
 	Point2D							m_focus;
+
+	bool							m_reconnect;
 };
 
 HRESULT kinectv2_init_color_image(IColorFrameSource *p_source, DeviceKinectV2Private *p_private)
@@ -110,6 +112,7 @@ DeviceKinectV2::DeviceKinectV2() :	m_private(std::make_unique<DeviceKinectV2Priv
 	m_private->m_color_format				= DPF_RGBA;
 	m_private->m_flip_output				= true;
 	m_private->m_green_screen				= false;
+	m_private->m_reconnect					= false;
 }
 
 DeviceKinectV2::~DeviceKinectV2()
@@ -144,7 +147,7 @@ bool DeviceKinectV2::connect_to_first()
 	}
 
 	// wait for the sensor to become available (300ms was quoted by ms on the kinect forum, but gave unreliable results on my machine)
-	if (SUCCEEDED(f_result))
+	if (SUCCEEDED(f_result) && !m_private->m_reconnect)
 	{
 		WAITABLE_HANDLE	f_sensor_waitable = 0;	
 		m_private->m_sensor->SubscribeIsAvailableChanged(&f_sensor_waitable);
@@ -162,6 +165,7 @@ bool DeviceKinectV2::connect_to_first()
 		}
 
 		m_private->m_sensor->UnsubscribeIsAvailableChanged(f_sensor_waitable);
+		m_private->m_reconnect = true;
 	}
 	
 	// obtain a color reader (seperate because framerate may vary)
