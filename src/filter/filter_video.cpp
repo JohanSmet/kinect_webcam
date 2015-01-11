@@ -24,6 +24,7 @@
 #include "device_factory.h"
 #include "settings.h"
 #include "guid_filter.h"
+#include "com_utils.h"
 
 namespace {
 
@@ -221,20 +222,54 @@ HRESULT CKCamStream::QueryInterface(REFIID riid, void **ppv)
 
 HRESULT CKCamStream::FillBuffer(IMediaSample *pms)
 {
-	const REFERENCE_TIME AVG_FRAME_TIME = (reinterpret_cast<VIDEOINFOHEADER*> (m_mt.pbFormat))->AvgTimePerFrame;
-
 	if (!m_device)
 		return E_FAIL;
 
-	// get the current time from the reference clock	
-	IReferenceClock *f_clock = nullptr;
+	// sync the stream against the reference clock
+	sync_against_reference_clock(pms);
+
+	// refresh settings
+	if (settings::have_changed())
+		settings::load();
+
+	m_device->focus_set_joint(settings::TrackingJoint);
+	m_device->green_screen_enable(settings::GreenScreenEnabled);
+
+	// let the device update itself
+	m_device->update();
+
+	if (settings::TrackingEnabled && m_device->focus_availabe())
+	{
+		m_focus = smooth_focus_update(m_device->focus_point());
+	}
+	
+	// copy the data to the output buffer
+    BYTE *pData;
+    pms->GetPointer(&pData);
+
+	auto *f_pvi = reinterpret_cast<VIDEOINFOHEADER *> (m_mt.Format());
+	m_device->color_data(m_focus.m_x, m_focus.m_y, f_pvi->bmiHeader.biWidth, f_pvi->bmiHeader.biHeight, f_pvi->bmiHeader.biBitCount, pData);
+
+	++m_num_frames;
+    return S_OK;
+}
+
+void CKCamStream::sync_against_reference_clock(IMediaSample *pms)
+{
+	const REFERENCE_TIME AVG_FRAME_TIME = (reinterpret_cast<VIDEOINFOHEADER*> (m_mt.pbFormat))->AvgTimePerFrame;
+
+	// get a pointer to the reference clock
+	com_safe_ptr_t<IReferenceClock> f_clock = nullptr;
 	m_pParent->GetSyncSource(&f_clock);
 	
-	if (f_clock)
+	if (!f_clock.get())
 	{
-		f_clock->GetTime(&m_ref_time_current);
-		f_clock->Release ();
+		// no reference clock means no synchronisation
+		return;
 	}
+
+	// get the current time from the reference clock	
+	f_clock->GetTime(&m_ref_time_current);
 
 	// first frame : initialize values 
 	if (m_num_frames <= 1)
@@ -274,30 +309,6 @@ HRESULT CKCamStream::FillBuffer(IMediaSample *pms)
 
 	pms->SetTime(&f_now, &m_time_stream);
 	pms->SetSyncPoint(TRUE);
-
-	if (settings::have_changed())
-		settings::load();
-
-	m_device->focus_set_joint(settings::TrackingJoint);
-	m_device->green_screen_enable(settings::GreenScreenEnabled);
-
-	// let the device update itself
-	m_device->update();
-
-	if (settings::TrackingEnabled && m_device->focus_availabe())
-	{
-		m_focus = smooth_focus_update(m_device->focus_point());
-	}
-	
-	// copy the data to the output buffer
-    BYTE *pData;
-    pms->GetPointer(&pData);
-
-	auto *f_pvi = reinterpret_cast<VIDEOINFOHEADER *> (m_mt.Format());
-	m_device->color_data(m_focus.m_x, m_focus.m_y, f_pvi->bmiHeader.biWidth, f_pvi->bmiHeader.biHeight, f_pvi->bmiHeader.biBitCount, pData);
-
-	++m_num_frames;
-    return S_OK;
 }
 
 //
@@ -455,6 +466,7 @@ HRESULT CKCamStream::OnThreadCreate()
     m_time_stream  = 0;
 	m_num_dropped = 0;
 	m_num_frames  = 0;
+	m_ref_time_current = 0;
 
 	// be sure to refresh the settings
 	settings::load();

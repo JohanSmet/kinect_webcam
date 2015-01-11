@@ -87,6 +87,10 @@ class CKCamStream : public CSourceStream,  public IAMDroppedFrames, public IAMSt
 		HRESULT OnThreadCreate(void);
 		HRESULT OnThreadDestroy(void);
 
+	// helper functions
+	private : 
+		void sync_against_reference_clock(IMediaSample *pms);
+
 	// variables
 	private:
 		CKCam *	m_pParent;
