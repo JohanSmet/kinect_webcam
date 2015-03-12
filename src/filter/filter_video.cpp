@@ -244,14 +244,18 @@ HRESULT CKCamStream::FillBuffer(IMediaSample *pms)
 	}
 	
 	// copy the data to the output buffer
-    BYTE *pData;
-    pms->GetPointer(&pData);
+    BYTE *pData = nullptr;
+    HRESULT f_result = pms->GetPointer(&pData);
+
+	if (FAILED(f_result))
+		return f_result;
 
 	auto *f_pvi = reinterpret_cast<VIDEOINFOHEADER *> (m_mt.Format());
 	m_device->color_data(m_focus.m_x, m_focus.m_y, f_pvi->bmiHeader.biWidth, f_pvi->bmiHeader.biHeight, f_pvi->bmiHeader.biBitCount, pData);
 
 	++m_num_frames;
-    return S_OK;
+	return S_OK;
+	
 }
 
 void CKCamStream::sync_against_reference_clock(IMediaSample *pms)

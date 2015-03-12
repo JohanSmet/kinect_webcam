@@ -163,6 +163,9 @@ bool DeviceNull::init_color_frame()
 
 	auto f_dib = CreateDIBSection(nullptr, &f_bmi, DIB_RGB_COLORS, &f_buffer, nullptr, 0);
 
+	if (!f_dib)
+		return false;
+	
 	// attach the DIB to a device context
 	auto f_hdc = GetDC(nullptr);
 	auto f_paintdc = CreateCompatibleDC(f_hdc);

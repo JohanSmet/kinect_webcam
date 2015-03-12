@@ -59,7 +59,7 @@ struct DeviceKinectV2Private
 
 HRESULT kinectv2_init_color_image(IColorFrameSource *p_source, DeviceKinectV2Private *p_private)
 {
-	com_safe_ptr_t<IFrameDescription>	f_frame_desc;
+	com_safe_ptr_t<IFrameDescription>	f_frame_desc = nullptr;
 
 	HRESULT f_result = p_source->get_FrameDescription(&f_frame_desc);
 			
@@ -150,22 +150,25 @@ bool DeviceKinectV2::connect_to_first()
 	if (SUCCEEDED(f_result) && !m_private->m_reconnect)
 	{
 		WAITABLE_HANDLE	f_sensor_waitable = 0;	
-		m_private->m_sensor->SubscribeIsAvailableChanged(&f_sensor_waitable);
-
-		if (WaitForSingleObject(reinterpret_cast<HANDLE> (f_sensor_waitable), 1000) != WAIT_OBJECT_0)
-			f_result = E_ABORT;
+		f_result = m_private->m_sensor->SubscribeIsAvailableChanged(&f_sensor_waitable);
 
 		if (SUCCEEDED(f_result))
 		{
-			BOOLEAN		f_available = false;
-			f_result = m_private->m_sensor->get_IsAvailable(&f_available);
-
-			if (SUCCEEDED(f_result) && !f_available)
+			if (WaitForSingleObject(reinterpret_cast<HANDLE> (f_sensor_waitable), 1000) != WAIT_OBJECT_0)
 				f_result = E_ABORT;
-		}
 
-		m_private->m_sensor->UnsubscribeIsAvailableChanged(f_sensor_waitable);
-		m_private->m_reconnect = true;
+			if (SUCCEEDED(f_result))
+			{
+				BOOLEAN		f_available = false;
+				f_result = m_private->m_sensor->get_IsAvailable(&f_available);
+
+				if (SUCCEEDED(f_result) && !f_available)
+					f_result = E_ABORT;
+			}
+
+			m_private->m_sensor->UnsubscribeIsAvailableChanged(f_sensor_waitable);
+			m_private->m_reconnect = true;
+		}
 	}
 	
 	// obtain a color reader (seperate because framerate may vary)
