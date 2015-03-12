@@ -47,6 +47,7 @@ glob_sources(. ../common)
 
 include_directories(${KINECT_V1_INC}
 					${KINECT_V2_INC}
+					${OpenCV_INCLUDE_DIRS}
 					../common)
 
 add_library(kinect_webcam SHARED ${Sources})
