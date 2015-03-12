@@ -1,9 +1,12 @@
-# build directory
+# build directories
 build/
+/build_x64
+/dist
 
 # external dependencies
 strmbase/
-opencv/
+# vim backup files
+*~/
 
 # Windows image file caches
 Thumbs.db
@@ -45,4 +48,4 @@ Icon
 *.md~
 
 *.cmake~
-/build_x64
+*~
