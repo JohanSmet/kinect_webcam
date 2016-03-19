@@ -13,10 +13,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "device_kinect_v2.h"
-
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <Kinect.h>
+#include "kinect_v2_wrapper.h"
 
 #include <vector>
 
@@ -27,6 +24,7 @@ namespace device {
 
 struct DeviceKinectV2Private 
 {
+	Kinect2Funcs *					m_kinect_lib;
 	IKinectSensor *					m_sensor;
 	IColorFrameReader *				m_sensor_color_reader;
 	IMultiSourceFrameReader	*		m_sensor_multi_reader;
@@ -132,8 +130,16 @@ bool DeviceKinectV2::connect_to_first()
 
 	std::fill(std::begin(m_private->m_kinect_bodies), std::end(m_private->m_kinect_bodies), nullptr);
 
+	// try to load the kinect library
+	m_private->m_kinect_lib = kinect_v2_load_library();
+
+	if (m_private->m_kinect_lib == nullptr)
+	{
+		return false;
+	}
+
 	// connect to the default sensor
-	HRESULT f_result = GetDefaultKinectSensor(&m_private->m_sensor);
+	HRESULT f_result = m_private->m_kinect_lib->GetDefaultKinectSensor(&m_private->m_sensor);
 
 	if (FAILED(f_result) || !m_private->m_sensor)
 	{
@@ -170,7 +176,7 @@ bool DeviceKinectV2::connect_to_first()
 			m_private->m_reconnect = true;
 		}
 	}
-	
+
 	// obtain a color reader (seperate because framerate may vary)
 	if (SUCCEEDED(f_result))
 	{

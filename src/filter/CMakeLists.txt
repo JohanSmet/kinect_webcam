@@ -34,12 +34,6 @@ set (KINECT_V1_INC  "${KINECT_V1_ROOT}/inc")
 set (KINECT_V2_ROOT "${KINECT_SDK_ROOT}/v2.0_1409")
 set (KINECT_V2_INC  "${KINECT_V2_ROOT}/inc")
 
-if (${ARCH_64BIT})
-	set (KINECT_V2_LIBS "${KINECT_V2_ROOT}/lib/x64/Kinect20.lib")
-else()
-	set (KINECT_V2_LIBS "${KINECT_V2_ROOT}/lib/x86/Kinect20.lib")
-endif()
-
 # kinect webcam
 glob_sources(. ../common)
 
@@ -50,7 +44,6 @@ include_directories(${KINECT_V1_INC}
 
 add_library(kinect_webcam SHARED ${Sources})
 target_link_libraries(kinect_webcam strmbase
-									${KINECT_V2_LIBS}
 									opencv_core opencv_imgproc)
 set_property (TARGET kinect_webcam APPEND PROPERTY COMPILE_DEFINITIONS UNICODE _UNICODE)							
 
