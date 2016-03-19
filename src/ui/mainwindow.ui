@@ -312,7 +312,7 @@
               <cursorShape>ArrowCursor</cursorShape>
              </property>
              <property name="text">
-              <string>Use Kinect fro Windows V2</string>
+              <string>Use Kinect for Windows V2</string>
              </property>
             </widget>
            </item>
