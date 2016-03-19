@@ -14,13 +14,9 @@
 
 #include "device_kinect.h"
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-
 #include <vector>
-#include <Shlobj.h>
-#include <NuiApi.h>
 
+#include "kinect_wrapper.h"
 #include "image.h"
 #include "com_utils.h"
 
@@ -28,6 +24,7 @@ namespace device {
 
 struct DeviceKinectPrivate 
 {
+	KinectFuncs	*			m_kinect_lib;
 	INuiSensor *			m_sensor;
 	HANDLE					m_sensor_data_event;
 	HANDLE					m_sensor_color_stream;
@@ -82,10 +79,18 @@ bool DeviceKinect::connect_to_first()
 {
 	m_private->m_sensor	= nullptr;
 
+	// try to load the kinect library
+	m_private->m_kinect_lib = kinect_load_library();
+
+	if (m_private->m_kinect_lib == nullptr)
+	{
+		return false;
+	}
+
 	// how many kinect-sensors are connected to the machine ?
 	int				f_sensor_count = 0;
 
-	HRESULT f_result = NuiGetSensorCount(&f_sensor_count);
+	HRESULT f_result = m_private->m_kinect_lib->NuiGetSensorCount(&f_sensor_count);
     
 	if (FAILED(f_result))
     {
@@ -96,7 +101,7 @@ bool DeviceKinect::connect_to_first()
 	for (int f_idx = 0; f_idx < f_sensor_count; ++f_idx)
     {
 		// create the device
-		f_result = NuiCreateSensorByIndex(f_idx, &m_private->m_sensor);
+		f_result = m_private->m_kinect_lib->NuiCreateSensorByIndex(f_idx, &m_private->m_sensor);
         if (FAILED(f_result))
         {
             continue;
@@ -185,6 +190,8 @@ bool DeviceKinect::disconnect()
 	}
 
 	m_private->m_color_data.clear();
+
+	kinect_free_library();
 
 	return true;
 }
@@ -499,9 +506,10 @@ bool DeviceKinect::read_skeleton_frame()
 			NuiTransformSkeletonToDepthImage(f_kinect_skeleton.SkeletonPositions[m_private->m_focus_joint], 
 											 &f_depth_x, &f_depth_y, &f_depth);
 
-			f_result = NuiImageGetColorPixelCoordinatesFromDepthPixel(	NUI_IMAGE_RESOLUTION_640x480, nullptr, 
-																		f_depth_x, f_depth_y, f_depth,
-																		&f_color_x, &f_color_y);
+			f_result = m_private->m_kinect_lib->NuiImageGetColorPixelCoordinatesFromDepthPixel(
+															NUI_IMAGE_RESOLUTION_640x480, nullptr, 
+															f_depth_x, f_depth_y, f_depth,
+															&f_color_x, &f_color_y);
 
 			if (SUCCEEDED (f_result))
 			{
