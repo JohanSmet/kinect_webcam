@@ -14,8 +14,14 @@
 
 #include "device_factory.h"
 
+#ifdef HAVE_KINECT_V2
 #include "device_kinect_v2.h"
+#endif // HAVE_KINECT_V2
+
+#ifdef HAVE_KINECT_V1
 #include "device_kinect.h"
+#endif // HAVE_KINECT_V1
+
 #include "device_null.h"
 
 namespace device {
@@ -24,19 +30,23 @@ std::unique_ptr<class Device> device_factory(const std::string &p_type)
 {
 	std::unique_ptr<class Device> f_result = nullptr;
 
+#ifdef HAVE_KINECT_V1
 	if (p_type == "kinect")
 	{
 		f_result = std::make_unique<DeviceKinect>();
+		return f_result;
 	}
-	else if (p_type == "kinect_v2")
+#endif // HAVE_KINECT_V1
+
+#ifdef HAVE_KINECT_V2
+	if (p_type == "kinect_v2")
 	{
 		f_result = std::make_unique<DeviceKinectV2>();
+		return f_result;
 	}
-	else
-	{
-		f_result = std::make_unique<DeviceNull>();
-	}
+#endif // HAVE_KINECT_V2
 
+	f_result = std::make_unique<DeviceNull>();
 	return std::move(f_result);
 }
 

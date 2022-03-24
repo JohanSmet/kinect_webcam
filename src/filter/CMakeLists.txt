@@ -12,6 +12,9 @@
 
 cmake_minimum_required(VERSION 2.8.12)
 
+option(ENABLE_KINECT_V1 "Enable the Kinect V1 SDK" OFF)
+option(ENABLE_KINECT_V2 "Enable the Kinect V2 SDK" OFF)
+
 # check for a 64bit platform
 if (CMAKE_SIZEOF_VOID_P EQUAL 8)
 	set(ARCH_64BIT	true)
@@ -35,14 +38,53 @@ set (KINECT_V2_ROOT "${KINECT_SDK_ROOT}/v2.0_1409")
 set (KINECT_V2_INC  "${KINECT_V2_ROOT}/inc")
 
 # kinect webcam
-glob_sources(. ../common)
-
 include_directories(${KINECT_V1_INC}
 					${KINECT_V2_INC} 
 					${OpenCV_INCLUDE_DIRS}
 					../common)
 
 add_library(kinect_webcam SHARED ${Sources})
+target_sources(kinect_webcam PRIVATE
+	../common/com_utils.h
+	../common/guid_filter.cpp
+	../common/guid_filter.h
+	../common/settings.cpp
+	../common/settings.h
+	../common/settings_list.h
+
+	device.h
+	device_factory.cpp
+	device_factory.h
+	device_null.cpp
+	device_null.h
+	dll.cpp
+	filter_video.cpp
+	filter_video.h
+	filters.def
+	image.cpp
+	image.h
+)
+
+if (ENABLE_KINECT_V1)
+	target_sources(kinect_webcam PRIVATE
+		device_kinect.cpp
+		device_kinect.h
+		kinect_wrapper.cpp
+		kinect_wrapper.h
+	)
+	target_compile_definitions(kinect_webcam PRIVATE HAVE_KINECT_V1)
+endif()
+
+if (ENABLE_KINECT_V2)
+	target_sources(kinect_webcam PRIVATE
+		device_kinect_v2.cpp
+		device_kinect_v2.h
+		kinect_v2_wrapper.cpp
+		kinect_v2_wrapper.h
+	)
+	target_compile_definitions(kinect_webcam PRIVATE HAVE_KINECT_V2)
+endif()
+
 target_link_libraries(kinect_webcam strmbase
 									opencv_core opencv_imgproc)
 set_property (TARGET kinect_webcam APPEND PROPERTY COMPILE_DEFINITIONS UNICODE _UNICODE)							
