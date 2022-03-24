@@ -1,0 +1,16 @@
+[requires]
+opencv/2.4.13.7
+qt/5.15.3
+
+[generators]
+cmake_find_package
+cmake_paths
+
+[options]
+qt:shared=True
+
+[imports]
+bin, Qt5Core*.dll -> ./install
+bin, Qt5Gui*.dll -> ./install
+bin, Qt5Widgets*.dll -> ./install
+bin/archdatadir/plugins/platforms, qwindows*.dll -> ./install/platforms
