@@ -10,7 +10,7 @@
 #
 ###############################################################################
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.12)
 
 # check for a 64bit platform
 if (CMAKE_SIZEOF_VOID_P EQUAL 8)

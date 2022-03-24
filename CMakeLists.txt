@@ -10,8 +10,8 @@
 #
 ###############################################################################
 
-cmake_minimum_required(VERSION 2.8)
-cmake_policy(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.12)
+cmake_policy(VERSION 2.8.12)
 
 include (cmake/glob_sources.cmake)
 
