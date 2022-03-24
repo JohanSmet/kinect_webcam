@@ -127,7 +127,7 @@ void save()
 	// open the key (if it's not already open)
 	if (!g_registry)
 	{
-		if (RegOpenKeyEx(HKEY_CURRENT_USER, L"Software\\KinectWebCam", 0, KEY_WRITE, &g_registry) != ERROR_SUCCESS)
+		if (RegCreateKeyEx(HKEY_CURRENT_USER, L"Software\\KinectWebCam", 0, NULL, 0, KEY_WRITE, NULL, &g_registry, NULL) != ERROR_SUCCESS)
 		{
 			return;												// exit;
 		}
