@@ -7,7 +7,7 @@
 // Copyright (c) 2014	Contributors as noted in the AUTHORS file
 //
 // This file is licensed under the terms of the MIT license,
-// for more details please see LICENSE.txt in the root directory 
+// for more details please see LICENSE.txt in the root directory
 // of the provided source or http://opensource.org/licenses/MIT
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -32,7 +32,7 @@ Kinect2Funcs *kinect_v2_load_library()
 
 	g_kinect_library = LoadLibrary(L"kinect20.dll");
 
-	if (g_kinect_library == nullptr) 
+	if (g_kinect_library == nullptr)
 	{
 		return nullptr;
 	}

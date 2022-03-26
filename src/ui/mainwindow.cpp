@@ -88,7 +88,7 @@ void MainWindow::on_selResolution_currentIndexChanged (int p_index)
 	if (m_preview && !m_updating_ui)
 	{
 		auto &f_res = m_preview->video_resolutions()[p_index];
-		
+
 		ui->widget->setMinimumSize(f_res.m_width, f_res.m_height);
 		ui->widget->setMaximumSize(f_res.m_width, f_res.m_height);
 		ui->widget->updateGeometry();

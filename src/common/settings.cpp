@@ -7,7 +7,7 @@
 // Copyright (c) 2014	Contributors as noted in the AUTHORS file
 //
 // This file is licensed under the terms of the MIT license,
-// for more details please see LICENSE.txt in the root directory 
+// for more details please see LICENSE.txt in the root directory
 // of the provided source or http://opensource.org/licenses/MIT
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -24,7 +24,7 @@ inline int read_integer(HKEY p_reg, const wchar_t *p_name, int p_default)
 {
 	DWORD f_value;
 	DWORD f_size = sizeof(f_value);
-	
+
 	if (RegGetValue(p_reg, NULL, p_name, RRF_RT_REG_DWORD, NULL, &f_value, &f_size) != ERROR_SUCCESS)
 		return p_default;
 
@@ -41,7 +41,7 @@ inline bool read_bool(HKEY p_reg, const wchar_t *p_name, bool p_default)
 {
 	DWORD f_value;
 	DWORD f_size = sizeof(f_value);
-	
+
 	if (RegGetValue(p_reg, NULL, p_name, RRF_RT_REG_DWORD, NULL, &f_value, &f_size) != ERROR_SUCCESS)
 		return p_default;
 

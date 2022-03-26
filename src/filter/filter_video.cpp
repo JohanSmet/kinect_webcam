@@ -7,7 +7,7 @@
 // Copyright (c) 2014	Contributors as noted in the AUTHORS file
 //
 // This file is licensed under the terms of the MIT license,
-// for more details please see LICENSE.txt in the root directory 
+// for more details please see LICENSE.txt in the root directory
 // of the provided source or http://opensource.org/licenses/MIT
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -115,7 +115,7 @@ CUnknown * WINAPI CKCam::CreateInstance(LPUNKNOWN lpunk, HRESULT *phr)
     return punk;
 }
 
-CKCam::CKCam(LPUNKNOWN lpunk, HRESULT *phr) : 
+CKCam::CKCam(LPUNKNOWN lpunk, HRESULT *phr) :
     CSource(NAME("KinectWebCam"), lpunk, CLSID_KinectWebCam)
 {
     ASSERT(phr);
@@ -129,7 +129,7 @@ CKCam::CKCam(LPUNKNOWN lpunk, HRESULT *phr) :
 HRESULT CKCam::QueryInterface(REFIID riid, void **ppv)
 {
     // forwards request for IAMStreamConfig, IKsPropertySet and IAMDroppedFrames to the pin
-    if (riid == _uuidof(IAMStreamConfig)  || 
+    if (riid == _uuidof(IAMStreamConfig)  ||
 		riid == _uuidof(IAMDroppedFrames) ||
 		riid == _uuidof(IKsPropertySet))
         return m_paStreams[0]->QueryInterface(riid, ppv);
@@ -138,12 +138,12 @@ HRESULT CKCam::QueryInterface(REFIID riid, void **ppv)
 }
 
 //////////////////////////////////////////////////////////////////////////
-// CKCamStream is the one and only output pin of CKCam which handles 
+// CKCamStream is the one and only output pin of CKCam which handles
 // all the stuff.
 //////////////////////////////////////////////////////////////////////////
 
 CKCamStream::CKCamStream(HRESULT *phr, CKCam *pParent, LPCWSTR pPinName) :
-    CSourceStream(NAME("KinectWebCam"), phr, pParent, pPinName), 
+    CSourceStream(NAME("KinectWebCam"), phr, pParent, pPinName),
 	m_num_frames(0),
 	m_num_dropped(0),
 	m_pParent(pParent)
@@ -152,13 +152,13 @@ CKCamStream::CKCamStream(HRESULT *phr, CKCam *pParent, LPCWSTR pPinName) :
 	settings::load();
 
 	// try to initialize a device
-	DeviceEnumeration	f_devices[] = 
+	DeviceEnumeration	f_devices[] =
 	{
 		{"kinect_v2",	settings::KinectV2Enabled},
 		{"kinect",		settings::KinectV1Enabled},
 		{"null",		true}
 	};
-	
+
 	for (auto f_dev = std::begin(f_devices); m_device == nullptr && f_dev != std::end(f_devices); ++f_dev)
 	{
 		if (f_dev->m_enabled)
@@ -197,10 +197,10 @@ CKCamStream::~CKCamStream()
 	{
 		m_device->disconnect();
 	}
-} 
+}
 
 HRESULT CKCamStream::QueryInterface(REFIID riid, void **ppv)
-{   
+{
     // Standard OLE stuff
     if(riid == _uuidof(IAMStreamConfig))
         *ppv = (IAMStreamConfig*) this;
@@ -242,7 +242,7 @@ HRESULT CKCamStream::FillBuffer(IMediaSample *pms)
 	{
 		m_focus = smooth_focus_update(m_device->focus_point());
 	}
-	
+
 	// copy the data to the output buffer
     BYTE *pData = nullptr;
     HRESULT f_result = pms->GetPointer(&pData);
@@ -255,7 +255,7 @@ HRESULT CKCamStream::FillBuffer(IMediaSample *pms)
 
 	++m_num_frames;
 	return S_OK;
-	
+
 }
 
 void CKCamStream::sync_against_reference_clock(IMediaSample *pms)
@@ -265,17 +265,17 @@ void CKCamStream::sync_against_reference_clock(IMediaSample *pms)
 	// get a pointer to the reference clock
 	com_safe_ptr_t<IReferenceClock> f_clock = nullptr;
 	m_pParent->GetSyncSource(&f_clock);
-	
+
 	if (!f_clock.get())
 	{
 		// no reference clock means no synchronisation
 		return;
 	}
 
-	// get the current time from the reference clock	
+	// get the current time from the reference clock
 	f_clock->GetTime(&m_ref_time_current);
 
-	// first frame : initialize values 
+	// first frame : initialize values
 	if (m_num_frames <= 1)
 	{
 		m_ref_time_start = m_ref_time_current;
@@ -284,7 +284,7 @@ void CKCamStream::sync_against_reference_clock(IMediaSample *pms)
 
 	REFERENCE_TIME f_now = m_time_stream;
 	m_time_stream += AVG_FRAME_TIME;
-	
+
 	// compute generated stream time and compare to real elapsed time
 	REFERENCE_TIME f_delta = ((m_ref_time_current - m_ref_time_start) - ((m_num_frames * AVG_FRAME_TIME) - AVG_FRAME_TIME));
 
@@ -299,7 +299,7 @@ void CKCamStream::sync_against_reference_clock(IMediaSample *pms)
 		}
 	}
 	else if (f_delta / AVG_FRAME_TIME > m_num_dropped)
-	{	
+	{
 		// newly dropped frame(s)
 		m_num_dropped  = static_cast<long> (f_delta / AVG_FRAME_TIME);
 		m_time_dropped = m_num_dropped * AVG_FRAME_TIME;
@@ -322,7 +322,7 @@ void CKCamStream::sync_against_reference_clock(IMediaSample *pms)
 STDMETHODIMP CKCamStream::Notify(IBaseFilter * pSender, Quality q)
 {
     return E_NOTIMPL;
-} 
+}
 
 //////////////////////////////////////////////////////////////////////////
 // This is called when the output format has been negotiated
@@ -345,9 +345,9 @@ HRESULT CKCamStream::SetMediaType(const CMediaType *pmt)
 	m_device->video_set_resolution(f_devres);
 
 	// see documentation of BITMAPINFOHEADER (http://msdn.microsoft.com/en-us/library/windows/desktop/dd318229%28v=vs.85%29.aspx) for more details
-	// - For uncompressed RGB bitmaps, if biHeight is positive, the bitmap is a bottom-up DIB with the origin at the lower left corner. 
+	// - For uncompressed RGB bitmaps, if biHeight is positive, the bitmap is a bottom-up DIB with the origin at the lower left corner.
 	//	 If biHeight is negative, the bitmap is a top-down DIB with the origin at the upper left corner.
-	// - For YUV bitmaps, the bitmap is always top-down, regardless of the sign of biHeight. 
+	// - For YUV bitmaps, the bitmap is always top-down, regardless of the sign of biHeight.
 	if (pvi->bmiHeader.biCompression == BI_RGB || pvi->bmiHeader.biCompression)
 		m_device->video_flip_output(pvi->bmiHeader.biHeight > 0);
 	else
@@ -405,13 +405,13 @@ HRESULT CKCamStream::GetMediaType(int iPosition, CMediaType *pmt)
     pmt->SetSampleSize(pvi->bmiHeader.biSizeImage);
 
 	DbgLog((LOG_TRACE, 1, "GetMediaType (iPosition = %d) <= %d x %d x %d", iPosition, pvi->bmiHeader.biWidth, pvi->bmiHeader.biHeight, pvi->bmiHeader.biBitCount));
-    
+
     return S_OK;
 }
 
 HRESULT CKCamStream::CheckMediaType(const CMediaType *pMediaType)
 {
-	// The CheckMediaType method determines if the pin accepts a specific media type. 
+	// The CheckMediaType method determines if the pin accepts a specific media type.
 	// MSDN says to "Only accept the preferred media type (See SetFormat for more information)"
 	//	but there applications that call CheckMediaType with a different media type than they call SetFormat (e.g. Flash in Chrome)
 	//	=> we just check some crucial parameters of the requested media type match with something we offer
@@ -459,11 +459,11 @@ HRESULT CKCamStream::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PROPERTIE
 		return f_result;
 
 	// sufficient memory ?
-    if (f_actual.cbBuffer < pProperties->cbBuffer) 
+    if (f_actual.cbBuffer < pProperties->cbBuffer)
 		return E_FAIL;
 
     return NOERROR;
-} 
+}
 
 HRESULT CKCamStream::OnThreadCreate()
 {
@@ -506,10 +506,10 @@ HRESULT STDMETHODCALLTYPE CKCamStream::SetFormat(AM_MEDIA_TYPE *pmt)
 {
 	// from MSDN (http://msdn.microsoft.com/en-us/library/windows/desktop/dd319788%28v=vs.85%29.aspx)
 	// The SetFormat method sets the output format on the pin.
-	// If the output pin is not connected, and the pin supports the specified media type, return S_OK. 
-	//	Store the media type and offer it as format number zero in the CBasePin::GetMediaType method. 
+	// If the output pin is not connected, and the pin supports the specified media type, return S_OK.
+	//	Store the media type and offer it as format number zero in the CBasePin::GetMediaType method.
 	//	Do not offer other formats, and reject other formats in the CBasePin::CheckMediaType method.
-	// If the pin is already connected, and the pin supports the media type, reconnect the pin with that type. 
+	// If the pin is already connected, and the pin supports the media type, reconnect the pin with that type.
 	//	If the other pin rejects the new type, return VFW_E_INVALIDMEDIATYPE and restore the original connection.
 	DbgLog((LOG_TRACE, 1, "SetFormat : %x", pmt));
 
@@ -527,13 +527,13 @@ HRESULT STDMETHODCALLTYPE CKCamStream::SetFormat(AM_MEDIA_TYPE *pmt)
 	VIDEOINFOHEADER *pvi = (VIDEOINFOHEADER *)(pmt->pbFormat);
 
 	DbgLog((LOG_TRACE, 1, "SetFormat : %d x %d x %d", pvi->bmiHeader.biWidth, pvi->bmiHeader.biHeight, pvi->bmiHeader.biBitCount));
-	
+
 	bool f_ok = false;
 
 	for (int f_idx = 0; !f_ok && f_idx < m_device->video_resolution_count(); ++f_idx)
 	{
 		auto f_res = m_device->video_resolution(f_idx);
-		
+
 		f_ok = (f_res.m_width == pvi->bmiHeader.biWidth &&
 			    f_res.m_height == pvi->bmiHeader.biHeight &&
 			    f_res.m_bits_per_pixel == pvi->bmiHeader.biBitCount);
@@ -593,9 +593,9 @@ HRESULT STDMETHODCALLTYPE CKCamStream::GetStreamCaps(int iIndex, AM_MEDIA_TYPE *
     (*pmt)->bFixedSizeSamples		= FALSE;
     (*pmt)->lSampleSize				= pvi->bmiHeader.biSizeImage;
     (*pmt)->cbFormat				= sizeof(VIDEOINFOHEADER);
-    
+
     DECLARE_PTR(VIDEO_STREAM_CONFIG_CAPS, pvscc, pSCC);
-    
+
     pvscc->guid					= FORMAT_VideoInfo;
     pvscc->VideoStandard		= AnalogVideo_None;
     pvscc->InputSize.cx			= f_devres.m_width;
@@ -634,7 +634,7 @@ HRESULT STDMETHODCALLTYPE CKCamStream::GetStreamCaps(int iIndex, AM_MEDIA_TYPE *
 
 HRESULT STDMETHODCALLTYPE CKCamStream::GetNumNotDropped (long* plNotDropped)
 {
-	if (!plNotDropped) 
+	if (!plNotDropped)
 		return E_POINTER;
 
 	*plNotDropped = m_num_frames;
@@ -643,9 +643,9 @@ HRESULT STDMETHODCALLTYPE CKCamStream::GetNumNotDropped (long* plNotDropped)
 
 HRESULT STDMETHODCALLTYPE CKCamStream::GetNumDropped (long* plDropped)
 {
-	if (!plDropped) 
+	if (!plDropped)
 		return E_POINTER;
-	
+
 	*plDropped = m_num_dropped;
 	return NOERROR;
 }
@@ -669,13 +669,13 @@ HRESULT STDMETHODCALLTYPE CKCamStream::GetAverageFrameSize (long* plAverageSize)
 // IKsPropertySet
 //////////////////////////////////////////////////////////////////////////
 
-HRESULT CKCamStream::Set(REFGUID guidPropSet, DWORD dwID, void *pInstanceData, 
+HRESULT CKCamStream::Set(REFGUID guidPropSet, DWORD dwID, void *pInstanceData,
                         DWORD cbInstanceData, void *pPropData, DWORD cbPropData)
 {
     return E_NOTIMPL;
 }
 
-// Get: Return the pin category (our only property). 
+// Get: Return the pin category (our only property).
 HRESULT CKCamStream::Get(
     REFGUID guidPropSet,   // Which property set.
     DWORD dwPropID,        // Which property in that set.
@@ -689,11 +689,11 @@ HRESULT CKCamStream::Get(
     if (guidPropSet != AMPROPSETID_Pin)             return E_PROP_SET_UNSUPPORTED;
     if (dwPropID != AMPROPERTY_PIN_CATEGORY)        return E_PROP_ID_UNSUPPORTED;
     if (pPropData == NULL && pcbReturned == NULL)   return E_POINTER;
-    
+
     if (pcbReturned) *pcbReturned = sizeof(GUID);
-    if (pPropData == NULL)          return S_OK;			// caller just wants to know the size. 
+    if (pPropData == NULL)          return S_OK;			// caller just wants to know the size.
     if (cbPropData < sizeof(GUID))  return E_UNEXPECTED;	// The buffer is too small.
-        
+
     *(GUID *) pPropData = PIN_CATEGORY_CAPTURE;
     return S_OK;
 }
@@ -705,6 +705,6 @@ HRESULT CKCamStream::QuerySupported(REFGUID guidPropSet, DWORD dwPropID, DWORD *
     if (dwPropID != AMPROPERTY_PIN_CATEGORY) return E_PROP_ID_UNSUPPORTED;
 
 	// We support getting this property, but not setting it.
-    if (pTypeSupport) *pTypeSupport = KSPROPERTY_SUPPORT_GET; 
+    if (pTypeSupport) *pTypeSupport = KSPROPERTY_SUPPORT_GET;
     return S_OK;
 }

@@ -7,7 +7,7 @@
 // Copyright (c) 2014	Contributors as noted in the AUTHORS file
 //
 // This file is licensed under the terms of the MIT license,
-// for more details please see LICENSE.txt in the root directory 
+// for more details please see LICENSE.txt in the root directory
 // of the provided source or http://opensource.org/licenses/MIT
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -34,7 +34,7 @@ bool copy_region_32bpp_32bpp(int p_src_width, int p_src_height, unsigned char *p
 		cv::flip(f_src_cropped, f_dst, 0);
 	else
 		f_src_cropped.copyTo(f_dst);
-	
+
 	return true;
 }
 
@@ -64,7 +64,7 @@ bool copy_region_32bpp_32bpp_mask(	int p_src_width, int p_src_height, unsigned c
 		// mask to the destination
 		f_src_cropped.copyTo(f_dst, f_msk_cropped);
 	}
-	
+
 	return true;
 }
 
@@ -123,7 +123,7 @@ bool copy_region_32bpp_24bpp_mask(	int p_src_width, int p_src_height, unsigned c
 		// mask to the destination
 		f_src_rgb.copyTo(f_dst, f_msk_cropped);
 	}
-	
+
 	return true;
 }
 
@@ -142,7 +142,7 @@ bool copy_region_yuy2(int p_src_width, int p_src_height, unsigned char *p_src_da
 	{
 		memcpy(p_dst_data, f_src_line, f_line_size);
 	}
-	
+
 	return true;
 }
 

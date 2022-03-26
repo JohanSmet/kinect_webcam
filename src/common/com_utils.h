@@ -7,7 +7,7 @@
 // Copyright (c) 2014	Contributors as noted in the AUTHORS file
 //
 // This file is licensed under the terms of the MIT license,
-// for more details please see LICENSE.txt in the root directory 
+// for more details please see LICENSE.txt in the root directory
 // of the provided source or http://opensource.org/licenses/MIT
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -15,7 +15,7 @@
 #ifndef KS_COM_UTILS_H
 #define KS_COM_UTILS_H
 
-template <class T> 
+template <class T>
 inline void com_safe_release(T **p_interface)
 {
     if (*p_interface)

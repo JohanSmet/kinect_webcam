@@ -7,7 +7,7 @@
 // Copyright (c) 2014	Contributors as noted in the AUTHORS file
 //
 // This file is licensed under the terms of the MIT license,
-// for more details please see LICENSE.txt in the root directory 
+// for more details please see LICENSE.txt in the root directory
 // of the provided source or http://opensource.org/licenses/MIT
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -22,7 +22,7 @@
 
 namespace device {
 
-struct DeviceKinectPrivate 
+struct DeviceKinectPrivate
 {
 	KinectFuncs	*			m_kinect_lib;
 	INuiSensor *			m_sensor;
@@ -91,7 +91,7 @@ bool DeviceKinect::connect_to_first()
 	int				f_sensor_count = 0;
 
 	HRESULT f_result = m_private->m_kinect_lib->NuiGetSensorCount(&f_sensor_count);
-    
+
 	if (FAILED(f_result))
     {
         return false;
@@ -122,8 +122,8 @@ bool DeviceKinect::connect_to_first()
 	// initialize the kinect
 	if (m_private->m_sensor != nullptr)
 	{
-		f_result = m_private->m_sensor->NuiInitialize(NUI_INITIALIZE_FLAG_USES_SKELETON | NUI_INITIALIZE_FLAG_USES_COLOR | NUI_INITIALIZE_FLAG_USES_DEPTH_AND_PLAYER_INDEX); 
-        
+		f_result = m_private->m_sensor->NuiInitialize(NUI_INITIALIZE_FLAG_USES_SKELETON | NUI_INITIALIZE_FLAG_USES_COLOR | NUI_INITIALIZE_FLAG_USES_DEPTH_AND_PLAYER_INDEX);
+
 		if (SUCCEEDED(f_result))
         {
             // create an event that will be signaled when data is available
@@ -168,7 +168,7 @@ bool DeviceKinect::connect_to_first()
 		m_private->m_focus			 = {0, 0};
 		return true;
 	}
-    
+
 	return false;
 }
 
@@ -226,7 +226,7 @@ int	DeviceKinect::video_resolution_native()
 DeviceVideoResolution DeviceKinect::video_resolution(int p_index)
 {
 	return m_video_resolutions[p_index];
-} 
+}
 
 void DeviceKinect::video_set_resolution(DeviceVideoResolution p_devres)
 {
@@ -318,17 +318,17 @@ bool DeviceKinect::color_data(int p_hor_focus, int p_ver_focus, int p_width, int
 		build_index_mask();
 
 	switch (p_bpp)
-	{	
+	{
 		case 32 :
 			if (m_private->m_green_screen)
 				return img::copy_region_32bpp_32bpp_mask(	m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(), m_private->m_body_mask.data(),
 															f_hor_offset, f_ver_offset, p_width, p_height, p_data,
 															m_private->m_flip_output);
-			else 
+			else
 				return img::copy_region_32bpp_32bpp(m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(),
 													f_hor_offset, f_ver_offset, p_width, p_height, p_data,
 													m_private->m_flip_output);
-				
+
 		case 24 :
 			if (m_private->m_green_screen)
 				return img::copy_region_32bpp_24bpp_mask(	m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(), m_private->m_body_mask.data(),
@@ -338,7 +338,7 @@ bool DeviceKinect::color_data(int p_hor_focus, int p_ver_focus, int p_width, int
 				return img::copy_region_32bpp_24bpp(m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(),
 													f_hor_offset, f_ver_offset, p_width, p_height, p_data,
 													m_private->m_flip_output);
-	
+
 		default :
 			return false;
 	}
@@ -426,7 +426,7 @@ bool DeviceKinect::read_color_frame()
 
 	// process it
 	std::memcpy(m_private->m_color_data.data(), static_cast<BYTE *>(f_locked_rect.pBits), f_locked_rect.size);
-			
+
 	// we're done with the texture so unlock it
     f_texture->UnlockRect(0);
 
@@ -459,7 +459,7 @@ bool DeviceKinect::read_depth_frame()
 
 	// process it
 	std::memcpy(m_private->m_depth_data.data(), static_cast<BYTE *>(f_locked_rect.pBits), f_locked_rect.size);
-			
+
 	// we're done with the texture so unlock it
     f_texture->UnlockRect(0);
 
@@ -495,7 +495,7 @@ bool DeviceKinect::read_skeleton_frame()
 
 		// is the body tracked ?
 		bool f_is_tracked = (f_kinect_skeleton.eTrackingState == NUI_SKELETON_TRACKED);
-	
+
 		// convert the location of the focus joint to color space
 		if (f_is_tracked)
 		{
@@ -503,11 +503,11 @@ bool DeviceKinect::read_skeleton_frame()
 			LONG	f_color_x, f_color_y;
 			USHORT	f_depth;
 
-			NuiTransformSkeletonToDepthImage(f_kinect_skeleton.SkeletonPositions[m_private->m_focus_joint], 
+			NuiTransformSkeletonToDepthImage(f_kinect_skeleton.SkeletonPositions[m_private->m_focus_joint],
 											 &f_depth_x, &f_depth_y, &f_depth);
 
 			f_result = m_private->m_kinect_lib->NuiImageGetColorPixelCoordinatesFromDepthPixel(
-															NUI_IMAGE_RESOLUTION_640x480, nullptr, 
+															NUI_IMAGE_RESOLUTION_640x480, nullptr,
 															f_depth_x, f_depth_y, f_depth,
 															&f_color_x, &f_color_y);
 
@@ -529,7 +529,7 @@ bool DeviceKinect::build_index_mask()
 																							m_private->m_nui_color_resolution,
 																							m_private->m_nui_depth_resolution,
 																							m_private->m_depth_data.size(),
-																							m_private->m_depth_data.data(), 
+																							m_private->m_depth_data.data(),
 																							m_private->m_depth_points.size(),
 																							m_private->m_depth_points.data());
 

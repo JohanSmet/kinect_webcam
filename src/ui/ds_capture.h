@@ -44,10 +44,10 @@ class DSVideoCapture
 		// create a preview of the specified device in the specified window
         void preview_device(RECT p_dimension, HWND p_video_parent = nullptr);
 		void preview_shutdown();
-		
+
 		// control the position and size of the preview window
 		void video_window_resize(RECT p_dimesion);
-	
+
 		// resolution
 		void video_change_resolution(int p_resolution);
 		inline const VideoResolutions &video_resolutions() const {return m_resolutions;}

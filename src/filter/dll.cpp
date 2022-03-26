@@ -7,7 +7,7 @@
 // Copyright (c) 2014	Contributors as noted in the AUTHORS file
 //
 // This file is licensed under the terms of the MIT license,
-// for more details please see LICENSE.txt in the root directory 
+// for more details please see LICENSE.txt in the root directory
 // of the provided source or http://opensource.org/licenses/MIT
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -35,15 +35,15 @@ STDAPI AMovieSetupUnregisterServer( CLSID clsServer );
 
 const wchar_t FILTER_NAME_KINECT_WEBCAM[] = L"KinectWebCam";
 
-const AMOVIESETUP_MEDIATYPE AMSMediaTypesKCam [] = 
+const AMOVIESETUP_MEDIATYPE AMSMediaTypesKCam [] =
 {
-	{ 
-		&MEDIATYPE_Video, 
-		&MEDIASUBTYPE_RGB32 
+	{
+		&MEDIATYPE_Video,
+		&MEDIASUBTYPE_RGB32
 	},
-	{ 
-		&MEDIATYPE_Video, 
-		&MEDIASUBTYPE_RGB24 
+	{
+		&MEDIATYPE_Video,
+		&MEDIASUBTYPE_RGB24
 	}
 };
 
@@ -69,7 +69,7 @@ const AMOVIESETUP_FILTER AMSFilterKCam =
     &AMSPinKCam             									// Pin details
 };
 
-CFactoryTemplate g_Templates[] = 
+CFactoryTemplate g_Templates[] =
 {
     {
         FILTER_NAME_KINECT_WEBCAM,
@@ -132,7 +132,7 @@ STDAPI RegisterFilters(BOOL bRegister)
 
 	if (GetModuleFileName(g_hInst, f_module_filename, MAX_PATH) == 0)
         return AmHresultFromWin32(GetLastError());
-  
+ 
     f_result = CoInitialize(0);
 
 	if (SUCCEEDED(f_result))

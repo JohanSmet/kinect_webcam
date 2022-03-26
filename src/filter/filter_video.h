@@ -7,7 +7,7 @@
 // Copyright (c) 2014	Contributors as noted in the AUTHORS file
 //
 // This file is licensed under the terms of the MIT license,
-// for more details please see LICENSE.txt in the root directory 
+// for more details please see LICENSE.txt in the root directory
 // of the provided source or http://opensource.org/licenses/MIT
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -72,7 +72,7 @@ class CKCamStream : public CSourceStream,  public IAMDroppedFrames, public IAMSt
 		HRESULT STDMETHODCALLTYPE Set(REFGUID guidPropSet, DWORD dwID, void *pInstanceData, DWORD cbInstanceData, void *pPropData, DWORD cbPropData);
 		HRESULT STDMETHODCALLTYPE Get(REFGUID guidPropSet, DWORD dwPropID, void *pInstanceData,DWORD cbInstanceData, void *pPropData, DWORD cbPropData, DWORD *pcbReturned);
 		HRESULT STDMETHODCALLTYPE QuerySupported(REFGUID guidPropSet, DWORD dwPropID, DWORD *pTypeSupport);
-		
+
 		//////////////////////////////////////////////////////////////////////////
 		//  CSourceStream
 		//////////////////////////////////////////////////////////////////////////
@@ -88,14 +88,14 @@ class CKCamStream : public CSourceStream,  public IAMDroppedFrames, public IAMSt
 		HRESULT OnThreadDestroy(void);
 
 	// helper functions
-	private : 
+	private :
 		void sync_against_reference_clock(IMediaSample *pms);
 
 	// variables
 	private:
 		CKCam *	m_pParent;
 
-		// the device 
+		// the device
 		std::unique_ptr<device::Device>	m_device;
 		device::Point2D					m_focus;
 

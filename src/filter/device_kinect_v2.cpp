@@ -7,7 +7,7 @@
 // Copyright (c) 2014	Contributors as noted in the AUTHORS file
 //
 // This file is licensed under the terms of the MIT license,
-// for more details please see LICENSE.txt in the root directory 
+// for more details please see LICENSE.txt in the root directory
 // of the provided source or http://opensource.org/licenses/MIT
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -22,7 +22,7 @@
 
 namespace device {
 
-struct DeviceKinectV2Private 
+struct DeviceKinectV2Private
 {
 	Kinect2Funcs *					m_kinect_lib;
 	IKinectSensor *					m_sensor;
@@ -60,7 +60,7 @@ HRESULT kinectv2_init_color_image(IColorFrameSource *p_source, DeviceKinectV2Pri
 	com_safe_ptr_t<IFrameDescription>	f_frame_desc = nullptr;
 
 	HRESULT f_result = p_source->get_FrameDescription(&f_frame_desc);
-			
+
 	if (SUCCEEDED(f_result)) f_result = f_frame_desc->get_Width(&p_private->m_color_width);
 	if (SUCCEEDED(f_result)) f_result = f_frame_desc->get_Height(&p_private->m_color_height);
 
@@ -70,14 +70,14 @@ HRESULT kinectv2_init_color_image(IColorFrameSource *p_source, DeviceKinectV2Pri
 	}
 
 	return f_result;
-} 
+}
 
 HRESULT kinectv2_init_depth_image(IDepthFrameSource *p_source, DeviceKinectV2Private *p_private)
 {
 	com_safe_ptr_t<IFrameDescription>	f_frame_desc;
 
 	HRESULT f_result = p_source->get_FrameDescription(&f_frame_desc);
-			
+
 	if (SUCCEEDED(f_result)) f_result = f_frame_desc->get_Width(&p_private->m_depth_width);
 	if (SUCCEEDED(f_result)) f_result = f_frame_desc->get_Height(&p_private->m_depth_height);
 
@@ -155,7 +155,7 @@ bool DeviceKinectV2::connect_to_first()
 	// wait for the sensor to become available (300ms was quoted by ms on the kinect forum, but gave unreliable results on my machine)
 	if (SUCCEEDED(f_result) && !m_private->m_reconnect)
 	{
-		WAITABLE_HANDLE	f_sensor_waitable = 0;	
+		WAITABLE_HANDLE	f_sensor_waitable = 0;
 		f_result = m_private->m_sensor->SubscribeIsAvailableChanged(&f_sensor_waitable);
 
 		if (SUCCEEDED(f_result))
@@ -181,7 +181,7 @@ bool DeviceKinectV2::connect_to_first()
 	if (SUCCEEDED(f_result))
 	{
 		com_safe_ptr_t<IColorFrameSource> f_color_frame_source;
- 
+
 		f_result = m_private->m_sensor->get_ColorFrameSource(&f_color_frame_source);
 
         if (SUCCEEDED(f_result))
@@ -206,7 +206,7 @@ bool DeviceKinectV2::connect_to_first()
 	if (SUCCEEDED(f_result))
 	{
 		com_safe_ptr_t<IDepthFrameSource> f_depth_frame_source;
- 
+
 		f_result = m_private->m_sensor->get_DepthFrameSource(&f_depth_frame_source);
 
 		if (SUCCEEDED(f_result))
@@ -216,7 +216,7 @@ bool DeviceKinectV2::connect_to_first()
 	}
 
 	// initialization for the body index reader
-	if (SUCCEEDED(f_result)) 
+	if (SUCCEEDED(f_result))
 	{
 		// dimensions are the same as the depth buffer
 		m_private->m_body_index_data.resize(m_private->m_depth_width * m_private->m_depth_height);
@@ -232,7 +232,7 @@ bool DeviceKinectV2::connect_to_first()
 	{
 		f_result = m_private->m_sensor->get_CoordinateMapper(&m_private->m_sensor_coordinate_mapper);
 	}
-	
+
 	// release resources if something failed
 	if (FAILED(f_result))
 	{
@@ -243,20 +243,20 @@ bool DeviceKinectV2::connect_to_first()
 	}
 
 	if (m_private->m_sensor != nullptr)
-	{	
+	{
 		m_private->m_focus_joint	 = JointType_Head;
 		m_private->m_focus_available = false;
 		m_private->m_focus			 = {0, 0};
 		return true;
 	}
-    
+
 	return false;
 }
 
 bool DeviceKinectV2::disconnect()
 {
 	com_safe_release(&m_private->m_sensor_color_reader);
-	
+
 	if (m_private->m_sensor)
 	{
 		m_private->m_sensor->Close();
@@ -302,7 +302,7 @@ int	DeviceKinectV2::video_resolution_native()
 DeviceVideoResolution DeviceKinectV2::video_resolution(int p_index)
 {
 	return m_video_resolutions[p_index];
-} 
+}
 
 void DeviceKinectV2::video_set_resolution(DeviceVideoResolution p_devres)
 {
@@ -353,14 +353,14 @@ bool DeviceKinectV2::update()
 	if (!m_private->m_sensor)
 		return false;
 
-	// read the color frame separately - the kinect can drop to 15fps in low light conditions 
+	// read the color frame separately - the kinect can drop to 15fps in low light conditions
 	//	but we don't want to delay the other data sources
 	bool f_new_data = read_color_frame();
 
 	// check if there's new data available in the multi-source reader
 	com_safe_ptr_t<IMultiSourceFrame>	f_multi_frame = nullptr;
 	if (m_private->m_sensor_multi_reader && SUCCEEDED (m_private->m_sensor_multi_reader->AcquireLatestFrame(&f_multi_frame)))
-	{ 
+	{
 		f_new_data |= read_body_index_frame(f_multi_frame.get());
 		f_new_data |= read_body_frame(f_multi_frame.get());
 		f_new_data |= read_depth_frame(f_multi_frame.get());
@@ -396,13 +396,13 @@ bool DeviceKinectV2::color_data(int p_hor_focus, int p_ver_focus, int p_width, i
 		build_index_mask();
 
 	switch (m_private->m_color_format)
-	{	
+	{
 		case DPF_RGBA :
 			if (m_private->m_green_screen)
 				return img::copy_region_32bpp_32bpp_mask(	m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(), m_private->m_body_mask.data(),
 															f_hor_offset, f_ver_offset, p_width, p_height, p_data,
 															m_private->m_flip_output);
-			else 
+			else
 				return img::copy_region_32bpp_32bpp(m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(),
 													f_hor_offset, f_ver_offset, p_width, p_height, p_data,
 													m_private->m_flip_output);
@@ -419,7 +419,7 @@ bool DeviceKinectV2::color_data(int p_hor_focus, int p_ver_focus, int p_width, i
 		case DPF_YUY2 :
 			return img::copy_region_yuy2(	m_private->m_color_width, m_private->m_color_height, m_private->m_color_data.data(),
 											f_hor_offset, f_ver_offset, p_width, p_height, p_data);
-	
+
 		default :
 			return false;
 	}
@@ -460,7 +460,7 @@ bool DeviceKinectV2::read_body_index_frame(IMultiSourceFrame *p_multi_source_fra
 	auto f_result = p_multi_source_frame->get_BodyIndexFrameReference(&f_frame_ref);
 
 	if (SUCCEEDED(f_result))
-	{	
+	{
 		f_result = f_frame_ref->AcquireFrame(&f_frame);
 	}
 
@@ -486,7 +486,7 @@ bool DeviceKinectV2::read_body_frame(IMultiSourceFrame *p_multi_source_frame)
 	if (SUCCEEDED(f_result))
 	{
 		f_result = f_frame_ref->AcquireFrame(&f_frame);
-	}	
+	}
 
 	if (SUCCEEDED(f_result))
 	{
@@ -513,7 +513,7 @@ bool DeviceKinectV2::read_body_frame(IMultiSourceFrame *p_multi_source_frame)
 		{
 			f_result = f_body->GetJoints(JointType_Count, f_joints);
 		}
-	
+
 		// convert the location of the focus joint to color space
 		if (SUCCEEDED(f_result) && f_is_tracked)
 		{
@@ -544,7 +544,7 @@ bool DeviceKinectV2::read_depth_frame(IMultiSourceFrame *p_multi_source_frame)
 	auto f_result = p_multi_source_frame->get_DepthFrameReference(&f_frame_ref);
 
 	if (SUCCEEDED(f_result))
-	{	
+	{
 		f_result = f_frame_ref->AcquireFrame(&f_frame);
 	}
 
@@ -579,7 +579,7 @@ bool DeviceKinectV2::copy_index_buffer(int p_dst_x, int p_dst_y, int p_dst_width
 		for (int f_w = 0; f_w < p_dst_width; ++f_w)
 		{
 			unsigned char f_color =  (*f_src++ == 0xff) ? 0x00 : 0xff;
-			
+
 			*f_dst++ = f_color;
 			*f_dst++ = f_color;
 			*f_dst++ = f_color;
@@ -599,14 +599,14 @@ bool DeviceKinectV2::build_index_mask()
 
 	if (FAILED (f_result))
 		return false;
-	
+
 	std::fill(std::begin(m_private->m_body_mask), std::end(m_private->m_body_mask), 0);
 	unsigned char *f_mask = m_private->m_body_mask.data();
 
 	for (unsigned int f_idx = 0; f_idx < m_private->m_depth_points.size(); ++f_idx)
 	{
 		int f_depth_idx = (static_cast<int>(m_private->m_depth_points[f_idx].Y) * m_private->m_depth_width) + static_cast<int> (m_private->m_depth_points[f_idx].X);
-		
+
 		if (f_depth_idx >= 0 && static_cast<unsigned int> (f_depth_idx) < m_private->m_depth_data.size() && m_private->m_body_index_data[f_depth_idx] != 0xff)
 			f_mask[f_idx] = 0xff;
 	}

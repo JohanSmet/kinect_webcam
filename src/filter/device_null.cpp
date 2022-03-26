@@ -7,7 +7,7 @@
 // Copyright (c) 2014	Contributors as noted in the AUTHORS file
 //
 // This file is licensed under the terms of the MIT license,
-// for more details please see LICENSE.txt in the root directory 
+// for more details please see LICENSE.txt in the root directory
 // of the provided source or http://opensource.org/licenses/MIT
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -22,7 +22,7 @@
 
 namespace device {
 
-struct DeviceNullPrivate 
+struct DeviceNullPrivate
 {
 	DeviceVideoResolution	m_resolution;
 	std::vector<BYTE>		m_color_data;
@@ -83,7 +83,7 @@ int	DeviceNull::video_resolution_native()
 DeviceVideoResolution DeviceNull::video_resolution(int p_index)
 {
 	return m_private->m_resolution;
-} 
+}
 
 void DeviceNull::video_set_resolution(DeviceVideoResolution p_devres)
 {
@@ -165,7 +165,7 @@ bool DeviceNull::init_color_frame()
 
 	if (!f_dib)
 		return false;
-	
+
 	// attach the DIB to a device context
 	auto f_hdc = GetDC(nullptr);
 	auto f_paintdc = CreateCompatibleDC(f_hdc);

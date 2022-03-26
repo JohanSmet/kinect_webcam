@@ -7,7 +7,7 @@
 // Copyright (c) 2014	Contributors as noted in the AUTHORS file
 //
 // This file is licensed under the terms of the MIT license,
-// for more details please see LICENSE.txt in the root directory 
+// for more details please see LICENSE.txt in the root directory
 // of the provided source or http://opensource.org/licenses/MIT
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -21,7 +21,7 @@
 
 namespace device {
 
-enum DevicePixelFormat 
+enum DevicePixelFormat
 {
 	DPF_RGB,
 	DPF_RGBA,
@@ -70,7 +70,7 @@ class Device
 
 		// update
 		virtual bool update() = 0;
-		
+
 		// access to image data
 		virtual bool color_data(int p_hor_focus, int p_ver_focus, int p_width, int p_height, int p_bpp, unsigned char *p_data) = 0;
 };

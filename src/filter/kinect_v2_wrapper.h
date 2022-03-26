@@ -7,7 +7,7 @@
 // Copyright (c) 2014	Contributors as noted in the AUTHORS file
 //
 // This file is licensed under the terms of the MIT license,
-// for more details please see LICENSE.txt in the root directory 
+// for more details please see LICENSE.txt in the root directory
 // of the provided source or http://opensource.org/licenses/MIT
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -27,7 +27,7 @@ namespace device {
 
 typedef HRESULT (WINAPI *GetDefaultKinectSensorFunc) (_COM_Outptr_ IKinectSensor** defaultKinectSensor);
 
-struct Kinect2Funcs 
+struct Kinect2Funcs
 {
 	GetDefaultKinectSensorFunc	GetDefaultKinectSensor;
 };

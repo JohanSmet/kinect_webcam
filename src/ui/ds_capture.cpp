@@ -81,7 +81,7 @@ bool DSVideoCapture::graph_initialize()
     if (SUCCEEDED(f_result))
     {
 		m_builder->SetFiltergraph(m_graph);
-	}	
+	}
 
     // get interface to be used later
     if (SUCCEEDED(f_result))
@@ -140,7 +140,7 @@ bool DSVideoCapture::graph_shutdown()
 #ifdef _DEBUG
 	rot_remove_graph();
 #endif
-		
+
     // release the interface
 	com_safe_release(&m_renderer);
     com_safe_release(&m_control);
@@ -166,17 +166,17 @@ bool DSVideoCapture::create_capture_filter(GUID p_guid)
 	// retrieve the list of supported resolutions
 	int f_caps_count;
 	int f_caps_size;
-	
+
 	if (SUCCEEDED (f_result))
 	{
 		m_config->GetNumberOfCapabilities(&f_caps_count, &f_caps_size);
 	}
-	
+
 	for (int f_idx=0; SUCCEEDED(f_result) && f_idx < f_caps_count; ++f_idx)
 	{
 		VIDEO_STREAM_CONFIG_CAPS f_scc;
 		AM_MEDIA_TYPE *			 f_mt;
-	
+
 		f_result = m_config->GetStreamCaps(f_idx, &f_mt, (BYTE*) &f_scc);
 		VIDEOINFOHEADER *f_vi = reinterpret_cast<VIDEOINFOHEADER *> (f_mt->pbFormat);
 
@@ -195,7 +195,7 @@ bool DSVideoCapture::video_window_initialize(RECT p_window, HWND p_video_parent)
 	{
 		f_result = m_video_window->put_Owner(reinterpret_cast<OAHWND>(p_video_parent));
 	}
-    
+
     // window style
 	if (SUCCEEDED(f_result) && p_video_parent)
 	{
@@ -315,7 +315,7 @@ void DSVideoCapture::rot_add_graph()
     IRunningObjectTable *pROT;
     WCHAR wsz[128];
     HRESULT hr;
-	
+
 	if (m_graph == nullptr)
 		return;
 
@@ -325,14 +325,14 @@ void DSVideoCapture::rot_add_graph()
     hr = StringCchPrintfW(wsz, NUMELMS(wsz), L"FilterGraph %08x pid %08x\0", (DWORD_PTR) m_graph, GetCurrentProcessId());
 
     hr = CreateItemMoniker(L"!", wsz, &pMoniker);
-    if (SUCCEEDED(hr)) 
+    if (SUCCEEDED(hr))
     {
         // Use the ROTFLAGS_REGISTRATIONKEEPSALIVE to ensure a strong reference
         // to the object.  Using this flag will cause the object to remain
         // registered until it is explicitly revoked with the Revoke() method.
         //
         // Not using this flag means that if GraphEdit remotely connects
-        // to this graph and then GraphEdit exits, this object registration 
+        // to this graph and then GraphEdit exits, this object registration
         // will be deleted, causing future attempts by GraphEdit to fail until
         // this application is restarted or until the graph is registered again.
         hr = pROT->Register(ROTFLAGS_REGISTRATIONKEEPSALIVE, m_graph, pMoniker, &m_rot_id);
@@ -346,7 +346,7 @@ void DSVideoCapture::rot_remove_graph()
 {
     IRunningObjectTable *pROT;
 
-    if (SUCCEEDED(GetRunningObjectTable(0, &pROT))) 
+    if (SUCCEEDED(GetRunningObjectTable(0, &pROT)))
     {
         pROT->Revoke(m_rot_id);
         pROT->Release();

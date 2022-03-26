@@ -5,7 +5,7 @@
 # Copyright (c) 2014	Contributors as noted in the AUTHORS file
 #
 # This file is licensed under the terms of the MIT license,
-# for more details please see LICENSE.txt in the root directory 
+# for more details please see LICENSE.txt in the root directory
 # of the provided source or http://opensource.org/licenses/MIT
 #
 ###############################################################################
@@ -39,7 +39,7 @@ set (KINECT_V2_INC  "${KINECT_V2_ROOT}/inc")
 
 # kinect webcam
 include_directories(${KINECT_V1_INC}
-					${KINECT_V2_INC} 
+					${KINECT_V2_INC}
 					${OpenCV_INCLUDE_DIRS}
 					../common)
 
@@ -87,7 +87,7 @@ endif()
 
 target_link_libraries(kinect_webcam strmbase
 									opencv_core opencv_imgproc)
-set_property (TARGET kinect_webcam APPEND PROPERTY COMPILE_DEFINITIONS UNICODE _UNICODE)							
+set_property (TARGET kinect_webcam APPEND PROPERTY COMPILE_DEFINITIONS UNICODE _UNICODE)
 
 install (TARGETS kinect_webcam RUNTIME DESTINATION .)
 
