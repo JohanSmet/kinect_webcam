@@ -10,25 +10,18 @@
 #
 ###############################################################################
 
-cmake_minimum_required(VERSION 2.8.12)
-cmake_policy(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.12)
 
-include (cmake/glob_sources.cmake)
 include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
 
 project(kinect_webcam)
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/output/library)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/output/library)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/output/runtime)
-set(CMAKE_INSTALL_PREFIX		   ${PROJECT_BINARY_DIR}/install)
+set(CMAKE_INSTALL_PREFIX ${PROJECT_BINARY_DIR}/install)
 set(CMAKE_DEBUG_POSTFIX "")
 set(CMAKE_RELEASE_POSTFIX "")
 set(CMAKE_SHARED_LIBRARY_SUFFIX ".ax")
 
 include (cmake/build_strmbase.cmake)
-
-find_package(OpenCV)
 
 add_subdirectory(src/filter)
 add_subdirectory(src/ui)
