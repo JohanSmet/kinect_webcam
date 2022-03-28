@@ -1,0 +1,60 @@
+name: conan build
+
+on:
+  push:
+    paths-ignore:
+      - '**.md'
+
+env:
+  BUILD_TYPE: Release
+  BUILD_DIR: ${{ github.workspace }}/_build
+  KINECT_DIR: ${{ github.workspace }}/_kinect
+
+jobs:
+  build_windows_x64:
+    runs-on: windows-2019
+
+    steps:
+      # fetch sources
+      - name: Checkout project sources
+        uses: actions/checkout@v3
+
+      - name: Checkout Kinect dependencies
+        uses: actions/checkout@v3
+        with:
+          repository: 'JohanSmet/kinect_sdks'
+          token: ${{ secrets.KINECT_SDKS_ACCESS_TOKEN }}
+          path: ${{ env.KINECT_DIR }}
+
+      # fetch dependencies with conan
+      - name: Install Conan
+        uses: turtlebrowser/get-conan@v1.0
+
+      - name: Fetch dependencies with Conan
+        shell: bash
+        run: conan install . -s build_type=$BUILD_TYPE -s arch=x86_64 --install-folder=$BUILD_DIR
+
+      # build
+      - name: Configure build
+        shell: bash
+        run: |
+          cmake -B $BUILD_DIR -G "Visual Studio 16 2019" -A x64   \
+            -DENABLE_KINECT_V2=ON -DENABLE_KINECT_V1=ON           \
+            -DSTRMBASE_DIR=$KINECT_DIR/strmbase                   \
+            -DKINECT_SDK_ROOTDIR=$KINECT_DIR
+
+      - name: Build
+        shell: bash
+        run: cmake --build $BUILD_DIR --config $BUILD_TYPE
+
+      - name: Install
+        shell: bash
+        run: cmake --build $BUILD_DIR --config $BUILD_TYPE --target install
+
+      # archive
+      - name: Archive package
+        uses: actions/upload-artifact@v2
+        with:
+          name: kinect_webcam_x64
+          path: ${{ env.BUILD_DIR }}/install
+
